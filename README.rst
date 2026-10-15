@@ -1,4 +1,4 @@
-ESP-SDR on Zephyr
+ESP-SDR Jammer
 =================
 
 A software defined radio on the ESP32-S3 Wi-Fi radio for Zephyr: I/Q
