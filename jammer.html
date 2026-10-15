@@ -1,0 +1,627 @@
+<!doctype html>
+<!-- JAMREV:5 -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="color-scheme" content="dark" />
+<title>ESP-SDR Jammer</title>
+<style>
+  :root{--bg:#0b0e13;--panel:#141a23;--panel2:#1b2330;--line:#26303f;--fg:#e6edf6;
+        --dim:#8b9bb0;--ok:#4ade80;--bad:#f87171;--acc:#60a5fa;--warn:#fbbf24}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg);
+    font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+  body{padding:10px 10px calc(24px + env(safe-area-inset-bottom));max-width:760px;margin:0 auto}
+  header{display:flex;align-items:center;gap:9px;margin:4px 0 12px}
+  h1{font-size:16px;margin:0;flex:1}
+  h1 span{color:var(--dim);font-weight:400;font-size:12px;display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:12px;margin-bottom:10px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
+    margin:0 0 9px;font-weight:600}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  button{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:11px 13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button:active{transform:scale(.98)}
+  button:disabled{opacity:.4}
+  button.acc{background:#1d3a2a;border-color:#2c5a40;color:#b7f0cd}
+  button.stop{background:#3a1d1d;border-color:#5a2c2c;color:#f5c2c2}
+  button.test{background:#2a2a3a;border-color:#4a4a6a;color:#d6d6ff}
+  button.on{background:#20406b;border-color:#356399;color:#cfe3ff}
+  .modes button{flex:1}
+  .status{font-size:12px;padding:4px 9px;border-radius:999px;background:var(--panel2);
+    border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+  .status.ok{color:#b7f0cd;border-color:#2c5a40;background:#12271c}
+  .status.bad{color:#f5c2c2;border-color:#5a2c2c;background:#2a1414}
+  .sl{margin:9px 0 2px}
+  .sl label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--dim)}
+  .sl label b{color:var(--fg);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--acc)}
+  canvas{width:100%;height:150px;display:block;background:#0d1219;border-radius:10px;
+    border:1px solid var(--line)}
+  #monhdr{font-size:12px;color:var(--dim);margin-top:7px;font-variant-numeric:tabular-nums}
+  pre#log{margin:0;height:220px;overflow:auto;background:#0d1219;border:1px solid var(--line);
+    border-radius:10px;padding:8px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;
+    white-space:pre-wrap;word-break:break-all;color:#c7d3e2}
+  input[type=text],input[type=search]{font:13px ui-monospace,Menlo,Consolas,monospace;
+    background:#0d1219;color:var(--fg);border:1px solid var(--line);border-radius:10px;
+    padding:10px;min-width:0}
+  .raw{display:flex;gap:8px;margin-top:9px}
+  .raw input{flex:1}
+  .note{font-size:12px;color:var(--dim);margin:7px 0 0}
+  .note b{color:var(--warn);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}
+  .chip{display:flex;align-items:center;gap:7px;background:#1b2330;border:1px solid var(--line);
+    border-radius:999px;padding:6px 6px 6px 12px;font:12.5px ui-monospace,monospace}
+  .chip button{padding:2px 8px;border-radius:999px;font-size:13px;line-height:1}
+  .chip em{font-style:normal;color:var(--dim)}
+  #reflist{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;
+    background:#0d1219}
+  .grp{position:sticky;top:0;background:#121924;color:var(--dim);font-size:11px;
+    letter-spacing:.07em;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--line)}
+  .refrow{display:flex;gap:9px;align-items:baseline;padding:8px 10px;
+    border-bottom:1px solid #161e29;cursor:pointer}
+  .refrow:active{background:#151d28}
+  .refrow.sel{background:#16283c}
+  .refrow .f{font:12.5px ui-monospace,monospace;color:var(--fg);width:74px;flex:none;
+    font-variant-numeric:tabular-nums}
+  .refrow .t{flex:1;font-size:12.5px;color:#c7d3e2}
+  .refrow .w{font-size:11px;color:var(--dim);flex:none}
+  .refrow .r{font-size:10.5px;padding:2px 7px;border-radius:999px;flex:none;
+    border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+  .refrow .r.d{color:#b7f0cd;border-color:#2c5a40}
+  .refrow .r.h2{color:#ffe0a3;border-color:#5a4a20}
+  .refrow .r.h3{color:#f5c2c2;border-color:#5a2c2c}
+  .refrow .r.warn{color:#ffe0a3;border-color:#5a4a20}
+  .refrow.out{opacity:.5}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{flex:1;border:0;border-radius:0;background:transparent}
+  .seg button.on{background:#20406b;color:#cfe3ff}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ESP-SDR Jammer<span>exact-frequency picker</span></h1>
+  <div id="status" class="status">offline</div>
+  <button id="connect">Connect</button>
+</header>
+
+<div class="card">
+  <h2>0 · Is it transmitting?</h2>
+  <div class="grid2">
+    <button id="test" class="test">Test carrier (3 s)</button>
+    <button id="stat">Status / errors</button>
+  </div>
+  <p class="note">Do this first. <b>Test carrier</b> puts a 2441.1 MHz CW carrier on
+  air for 3 s and prints every radio return code — watch the log below.</p>
+</div>
+
+<div class="card">
+  <h2>1 · Pick the exact target frequency</h2>
+  <input type="search" id="search" placeholder="search: wifi, ble, 5180, dfs…"
+         style="width:100%" autocapitalize="off" autocorrect="off" spellcheck="false" />
+  <div id="reflist" style="margin-top:9px"></div>
+  <div class="raw">
+    <input type="text" id="manual" placeholder="exact MHz, e.g. 2412.5" />
+    <button id="add">Add</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="row">
+    <button id="apply" class="acc" style="flex:1">Apply to radio</button>
+    <button id="clear">Clear</button>
+  </div>
+  <p class="note" id="plan">no target selected</p>
+</div>
+
+<div class="card">
+  <h2>2 · Waveform</h2>
+  <div class="row modes" id="modes"></div>
+  <div class="grid2" style="margin-top:10px">
+    <button id="start" class="acc">Start jamming</button>
+    <button id="stop" class="stop">Stop</button>
+  </div>
+  <p class="note">Start applies the plan and then starts. Mode and the sliders act
+  <b>while jamming</b>. Commands go out one at a time and every one is
+  confirmed in the log, so a dropped character cannot leave you guessing.</p>
+</div>
+
+<div class="card">
+  <h2>3 · Tuning</h2>
+  <div class="sl"><label>Half width at target <b><span id="v_span"></span> kHz</b></label>
+    <input type="range" id="span" min="100" max="40000" step="100" value="39000"></div>
+  <div class="sl"><label>Dwell per target <b><span id="v_dwell"></span> ms</b></label>
+    <input type="range" id="dwell" min="5" max="1000" step="5" value="40"></div>
+  <div class="sl"><label>Digital amplitude <b><span id="v_amp"></span></b></label>
+    <input type="range" id="amp" min="10" max="511" step="1" value="450"></div>
+  <div class="sl"><label>TX power step <b><span id="v_gain"></span></b> (−1 = strongest)</label>
+    <input type="range" id="gain" min="-1" max="17" step="1" value="-1"></div>
+  <div class="sl"><label>Harmonic</label>
+    <div class="seg" id="harm">
+      <button data-h="0" class="on">auto</button>
+      <button data-h="1">1st</button>
+      <button data-h="2">2nd</button>
+      <button data-h="3">3rd</button>
+    </div>
+  </div>
+  <p class="note">Span is the half-width <b>at the target</b>; the baseband is
+  span/harm. Pick the row whose width matches the thing you want to cover
+  (a whole band, or one 22 MHz channel row for that channel).</p>
+</div>
+
+<div class="card">
+  <h2>Spectrum</h2>
+  <canvas id="spec"></canvas>
+  <div class="row" style="margin-top:9px">
+    <button id="mon">Monitor</button>
+    <button id="info">Read plan</button>
+  </div>
+  <div id="monhdr">no capture yet — note the jammer parks while capturing</div>
+</div>
+
+<div class="card">
+  <h2>Shell</h2>
+  <pre id="log"></pre>
+  <div class="raw">
+    <input type="text" id="cmd" placeholder="jam ref" autocapitalize="off"
+           autocomplete="off" autocorrect="off" spellcheck="false" />
+    <button id="send">Send</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const RAMP = " .:-=+*#%@";
+const enc  = new TextEncoder();
+const el   = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+let port = null, writer = null, reader = null, reading = false, connected = false;
+let running = false, rxbuf = "", pending = "", monTimer = null, monBusy = false;
+let monHeader = null, harmMode = 0, currentMode = "noise";
+const lines = [];
+const selected = new Map();
+
+/*
+ * The device's shell has a small RX ring: writing several commands at once
+ * loses characters, and the shell then eats half a command line. So writes go
+ * out one at a time, spaced, and every important command is verified.
+ */
+const GAP_MS = 40;
+const outq = [];
+let pumping = false;
+
+async function pump() {
+  if (pumping) return;
+  pumping = true;
+  while (outq.length) {
+    const it = outq.shift();
+    if (writer) {
+      try {
+        await Promise.race([writer.write(enc.encode(it.cmd + '\r')), sleep(1200)]);
+      } catch (e) {
+        log('write failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+    if (it.done) it.done();
+    await sleep(it.gap);
+  }
+  pumping = false;
+}
+
+function send(cmd, gap = GAP_MS) {
+  if (!writer) return Promise.resolve();
+  if (outq.length > 64) outq.splice(0, outq.length - 64);
+  return new Promise(done => { outq.push({ cmd, gap, done }); pump(); });
+}
+
+/* Resolves true when a line matching re arrives, false on timeout. */
+let waiters = [];
+function expect(re, ms = 2500) {
+  return new Promise(res => {
+    const w = { re, res };
+    w.t = setTimeout(() => { waiters = waiters.filter(x => x !== w); res(false); }, ms);
+    waiters.push(w);
+  });
+}
+function feedWaiters(line) {
+  if (!waiters.length) return;
+  waiters = waiters.filter(w => {
+    if (w.re.test(line)) { clearTimeout(w.t); w.res(true); return false; }
+    return true;
+  });
+}
+
+/* Send a command and insist on a reply; one retry after flushing a partial line. */
+async function ensure(re, cmd, tries = 2) {
+  for (let i = 1; i <= tries; i++) {
+    const p = expect(re, 2500);
+    await send(cmd);
+    if (await p) return true;
+    log('no reply to "' + cmd + '"' + (i < tries ? ' -- retrying' : ''));
+    if (i < tries) await send('');
+  }
+  log('WARNING: "' + cmd + '" was not confirmed -- press it again');
+  return false;
+}
+
+const on = (id, fn) => {
+  el(id).onclick = async () => {
+    try { await fn(); } catch (e) { log('error: ' + (e && e.message ? e.message : e)); }
+  };
+};
+
+/*
+ * The S3 PLL locks about 1817..2790 MHz (doc/hardware-quirks.md). Below that
+ * the LO is still attempted (marginal, may not lock); outside 1514..2790 the
+ * firmware skips the hop, so those rows are dropped here too.
+ */
+const LO_MIN = 1817, LO_MAX = 2790, LO_TRY_MIN = 1514;
+
+function reach(t) {
+  const h = t <= LO_MAX ? 1 : (t / 2 <= LO_MAX ? 2 : 3);
+  const lo = t / h;
+  if (lo > LO_MAX || lo < LO_TRY_MIN) return { h: 0, cls: "out", lbl: "out of range" };
+  if (lo < LO_MIN) return { h, cls: "warn", lbl: "marginal" };
+  return { h, cls: h === 1 ? "d" : "h" + h, lbl: h === 1 ? "direct" : (h === 2 ? "2nd harm" : "3rd harm") };
+}
+
+const REF = [
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2402, "BLE advertising ch37 · BT inquiry · nRF24 ch2", 2],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2405, "Zigbee / 802.15.4 ch11", 2],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2412, "Wi-Fi ch1 (US/EU non-overlapping 1·6·11)", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2417, "Wi-Fi ch2", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2422, "Wi-Fi ch3", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2426, "BLE advertising ch38 · Zigbee ch15", 2],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2427, "Wi-Fi ch4", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2432, "Wi-Fi ch5", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2437, "Wi-Fi ch6 — most common AP default", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2442, "Wi-Fi ch7", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2447, "Wi-Fi ch8", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2450, "Wi-Fi ch9 · Zigbee ch20 · microwave ovens", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2452, "Wi-Fi ch10", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2457, "Wi-Fi ch11", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2462, "Wi-Fi ch11 centre · Zigbee ch22", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2467, "Wi-Fi ch12 (EU/JP)", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2472, "Wi-Fi ch13 (EU/JP)", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2475, "Zigbee ch25", 2],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2480, "BLE adv ch39 · BT paging · Zigbee ch26", 2],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2484, "Wi-Fi ch14 (Japan only)", 22],
+["2.4 GHz ISM 2400–2483.5 — licence-free worldwide", 2441, "whole ISM band, one LO at 2441", 83],
+["2.4 GHz, outside ISM", 2320, "TD-LTE band 40 / amateur 13 cm", 20],
+["2.4 GHz, outside ISM", 2338, "SiriusXM satellite radio", 12],
+["2.4 GHz, outside ISM", 2535, "LTE band 7 uplink", 70],
+["2.4 GHz, outside ISM", 2595, "LTE band 38 TDD", 50],
+["2.4 GHz, outside ISM", 2655, "LTE band 7 downlink / band 41", 70],
+["Sub-2.4 GHz and cellular", 1575.42, "GPS L1 · Galileo E1 · BeiDou B1 (marginal)", 4],
+["Sub-2.4 GHz and cellular", 1616.5, "Iridium (marginal)", 10],
+["Sub-2.4 GHz and cellular", 1840, "GSM1800 / LTE band 3 downlink", 75],
+["Sub-2.4 GHz and cellular", 1880, "GSM1900 / PCS / LTE band 2 downlink", 60],
+["Sub-2.4 GHz and cellular", 1890, "DECT cordless phones (EU)", 20],
+["Sub-2.4 GHz and cellular", 1960, "UMTS / LTE band 2 downlink", 60],
+["Sub-2.4 GHz and cellular", 2140, "UMTS / LTE band 1 downlink", 60],
+["5 GHz Wi-Fi and friends", 5180, "Wi-Fi ch36 · UNII-1 (indoor)", 20],
+["5 GHz Wi-Fi and friends", 5200, "Wi-Fi ch40 · UNII-1", 20],
+["5 GHz Wi-Fi and friends", 5220, "Wi-Fi ch44 · UNII-1", 20],
+["5 GHz Wi-Fi and friends", 5240, "Wi-Fi ch48 · UNII-1", 20],
+["5 GHz Wi-Fi and friends", 5200, "whole UNII-1 5150–5250, one LO at 5200", 100],
+["5 GHz Wi-Fi and friends", 5260, "Wi-Fi ch52 · UNII-2A (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5280, "Wi-Fi ch56 · UNII-2A (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5300, "Wi-Fi ch60 · UNII-2A (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5320, "Wi-Fi ch64 · UNII-2A (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5410, "U-NII-2B — weather and military radar", 120],
+["5 GHz Wi-Fi and friends", 5500, "Wi-Fi ch100 · UNII-2C (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5580, "Wi-Fi ch116 · UNII-2C (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5660, "Wi-Fi ch132 · UNII-2C (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5700, "Wi-Fi ch140 · UNII-2C (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5720, "Wi-Fi ch144 · UNII-2C (DFS)", 20],
+["5 GHz Wi-Fi and friends", 5745, "Wi-Fi ch149 · UNII-3", 20],
+["5 GHz Wi-Fi and friends", 5765, "Wi-Fi ch153 · UNII-3", 20],
+["5 GHz Wi-Fi and friends", 5785, "Wi-Fi ch157 · UNII-3", 20],
+["5 GHz Wi-Fi and friends", 5805, "Wi-Fi ch161 · UNII-3", 20],
+["5 GHz Wi-Fi and friends", 5825, "Wi-Fi ch165 · UNII-3", 20],
+["5 GHz Wi-Fi and friends", 5785, "whole UNII-3 / 5.8 ISM 5725–5850, one LO at 5785", 125],
+["5 GHz Wi-Fi and friends", 5880, "U-NII-4 (US) · DSRC 5895 · C-V2X 5905", 75],
+["5 GHz Wi-Fi and friends", 5795, "analog FPV video and wireless senders 5645–5945", 300],
+["6 GHz Wi-Fi 6E / 7", 5955, "Wi-Fi 6E ch1", 20],
+["6 GHz Wi-Fi 6E / 7", 6135, "Wi-Fi 6E ch37", 20],
+["6 GHz Wi-Fi 6E / 7", 6315, "Wi-Fi 6E ch73", 20],
+["6 GHz Wi-Fi 6E / 7", 6495, "Wi-Fi 6E ch109", 20],
+["6 GHz Wi-Fi 6E / 7", 6675, "Wi-Fi 6E ch145", 20],
+["6 GHz Wi-Fi 6E / 7", 6855, "Wi-Fi 6E ch181", 20],
+["6 GHz Wi-Fi 6E / 7", 7035, "Wi-Fi 6E ch217", 20],
+["6 GHz Wi-Fi 6E / 7", 7115, "Wi-Fi 6E ch233 (last)", 20],
+["6 GHz Wi-Fi 6E / 7", 6175, "U-NII-5 5925–6425 — also the C-band satellite uplink", 500],
+["6 GHz Wi-Fi 6E / 7", 6475, "U-NII-6 6425–6525", 100],
+["6 GHz Wi-Fi 6E / 7", 6700, "U-NII-7 6525–6875", 350],
+["6 GHz Wi-Fi 6E / 7", 7000, "U-NII-8 6875–7125", 250],
+["Below the LO window", 433.92, "ISM 433 — remotes, sensors, TPMS", 1.7],
+["Below the LO window", 868, "ISM 868 (EU) — LoRa, smart meters", 1],
+["Below the LO window", 915, "ISM 915 (US) — LoRa, ISM", 26],
+["Below the LO window", 1090, "ADS-B / Mode-S", 2],
+["Below the LO window", 1227.6, "GPS L2", 20]
+];
+
+function setStatus(t, cls) { const s = el('status'); s.textContent = t; s.className = 'status ' + (cls || ''); }
+function log(s) {
+  lines.push(s);
+  if (lines.length > 500) lines.splice(0, lines.length - 500);
+  const p = el('log'); p.textContent = lines.join('\n'); p.scrollTop = p.scrollHeight;
+}
+
+async function connect() {
+  if (!('serial' in navigator)) { alert('No WebSerial here. Use Chrome or Edge.'); return; }
+  try {
+    const filt = { filters: [{ usbVendorId: 0x303a }, { usbVendorId: 0x2fe3 },
+                             { usbVendorId: 0x1a86 }, { usbVendorId: 0x10c4 }] };
+    try { port = await navigator.serial.requestPort(filt); }
+    catch (e) { port = await navigator.serial.requestPort(); }
+    await port.open({ baudRate: 115200 });
+    writer = port.writable.getWriter();
+    reader = port.readable.getReader();
+    reading = true; connected = true;
+    setStatus('connected', 'ok');
+    el('connect').textContent = 'Disconnect';
+    readLoop();
+    await send('');
+    await ensure(/^state /, 'jam status');
+    await send('jam info');
+    try { await navigator.wakeLock.request('screen'); } catch (e) {}
+  } catch (e) {
+    setStatus('failed', 'bad');
+    log('connect: ' + (e && e.message ? e.message : e));
+  }
+}
+
+async function disconnect() {
+  reading = false; connected = false;
+  if (monTimer) { clearInterval(monTimer); monTimer = null; el('mon').textContent = 'Monitor'; }
+  while (outq.length) { const it = outq.shift(); if (it.done) it.done(); }
+  try { if (reader) { await reader.cancel(); reader.releaseLock(); } } catch (e) {}
+  try { if (writer) writer.releaseLock(); } catch (e) {}
+  try { if (port) await port.close(); } catch (e) {}
+  reader = writer = port = null;
+  setStatus('offline');
+  el('connect').textContent = 'Connect';
+}
+
+async function readLoop() {
+  const dec = new TextDecoder();
+  while (reading) {
+    let r;
+    try { r = await reader.read(); } catch (e) { break; }
+    if (r.done) break;
+    rxbuf += dec.decode(r.value, { stream: true });
+    let i;
+    while ((i = rxbuf.indexOf('\n')) >= 0) {
+      onLine(rxbuf.slice(0, i).replace(/\r$/, ''));
+      rxbuf = rxbuf.slice(i + 1);
+    }
+    if (rxbuf.length > 8192) rxbuf = rxbuf.slice(-4096);
+  }
+  if (connected) { connected = false; setStatus('lost', 'bad'); }
+}
+
+const RE_MON = /mon f=(\d+)\.(\d{3}) h=(\d+)\.(\d{3}) b=(\d+) w=(\d+)\.(\d{2}) p=(-?\d+)\.(\d)/;
+const RE_BAR = /^\s*\|([^|]+)\|\s*$/;
+
+function onLine(raw) {
+  const line = pending ? pending + raw : raw;
+  if (line.indexOf('mon f=') >= 0 && line.indexOf(' p=') < 0) { pending = line; return; }
+  pending = '';
+  log(line);
+  feedWaiters(line);
+
+  /* The device is the authority on what it is doing. */
+  if (/state JAMMING|^jamming:/.test(line)) { running = true; setStatus('jamming', 'ok'); }
+  else if (/^state idle|^stopped|^already jamming|^idle$/.test(line)) {
+    running = false; if (connected) setStatus('connected', 'ok');
+  } else if (/failed \(|not up|UNREACHABLE/.test(line) && connected) {
+    setStatus('check log', 'bad');
+  }
+
+  let m = line.match(RE_MON);
+  if (m) {
+    monHeader = { lo: +m[1] + (+m[2]) / 1000, half: +m[3] + (+m[4]) / 1000,
+                  bins: +m[5], bw: +m[6] + (+m[7]) / 100, peak: parseFloat(m[8] + '.' + m[9]) };
+    return;
+  }
+  m = line.match(RE_BAR);
+  if (m && monHeader) {
+    drawSpectrum(m[1], monHeader);
+    el('monhdr').textContent = 'LO ' + monHeader.lo.toFixed(3) + ' MHz  ·  ±' +
+      monHeader.half.toFixed(3) + ' MHz  ·  ' + monHeader.bins + ' bins @ ' +
+      monHeader.bw.toFixed(2) + ' MHz  ·  peak ' + monHeader.peak.toFixed(1) + ' dBFS';
+    monBusy = false; monHeader = null;
+  }
+}
+
+function drawSpectrum(bars, h) {
+  const c = el('spec'), ctx = c.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = c.clientWidth, H = c.clientHeight;
+  c.width = W * dpr; c.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const n = bars.length, bw = W / n, base = H - 16;
+  const f0 = h.lo - h.half, f1 = h.lo + h.half;
+  ctx.strokeStyle = '#1e2836'; ctx.lineWidth = 1;
+  for (let g = 0; g <= 4; g++) {
+    const x = Math.round(W * g / 4) + .5;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, base); ctx.stroke();
+  }
+  for (let i = 0; i < n; i++) {
+    const v = RAMP.indexOf(bars[i]) / (RAMP.length - 1);
+    const bh = Math.max(1, v * (base - 2));
+    ctx.fillStyle = v > 0.72 ? '#f87171' : v > 0.45 ? '#fbbf24' : '#4ade80';
+    ctx.fillRect(i * bw, base - bh, Math.max(1, bw - 0.5), bh);
+  }
+  ctx.fillStyle = '#8b9bb0'; ctx.font = '10px system-ui';
+  for (let g = 0; g <= 4; g++) {
+    const lbl = Math.round(f0 + (f1 - f0) * g / 4) + '';
+    ctx.fillText(lbl, Math.min(W - 34, Math.max(2, W * g / 4 - lbl.length * 3)));
+  }
+}
+
+function buildRef() {
+  const q = el('search').value.trim().toLowerCase();
+  const list = el('reflist');
+  list.innerHTML = '';
+  let group = null;
+  REF.forEach(row => {
+    const [g, mhz, what, w] = row;
+    if (q && (g + ' ' + mhz + ' ' + what).toLowerCase().indexOf(q) < 0) return;
+    if (g !== group) {
+      group = g;
+      const h = document.createElement('div');
+      h.className = 'grp'; h.textContent = g;
+      list.appendChild(h);
+    }
+    const r = reach(mhz);
+    const d = document.createElement('div');
+    d.className = 'refrow' + (selected.has(mhz) ? ' sel' : '') + (r.h === 0 ? ' out' : '');
+    d.innerHTML = '<span class="f">' + mhz.toFixed(2) + '</span>' +
+                  '<span class="t">' + what + '</span>' +
+                  '<span class="w">' + (w >= 1 ? w + ' MHz' : '') + '</span>' +
+                  '<span class="r ' + r.cls + '">' + (harmMode === 1 && r.h ? 'direct' : r.lbl) + '</span>';
+    d.onclick = () => toggle(mhz, what, w);
+    list.appendChild(d);
+  });
+}
+
+function toggle(mhz, what, w) {
+  if (selected.has(mhz)) selected.delete(mhz);
+  else selected.set(mhz, { what, w });
+  if (selected.size === 1) {
+    /* Half width at the target = half the row's width, in kHz. */
+    const want = Math.min(40000, Math.max(100, Math.round(w * 500 / 100) * 100));
+    el('span').value = want; el('v_span').textContent = want;
+  }
+  buildRef(); buildChips();
+}
+
+function buildChips() {
+  const c = el('chips');
+  c.innerHTML = '';
+  if (!selected.size) { el('plan').textContent = 'no target selected'; return; }
+  const fr = [];
+  selected.forEach((v, mhz) => {
+    fr.push(mhz);
+    const r = reach(mhz);
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = mhz.toFixed(3) + ' <em>' +
+      (r.h === 0 ? 'out' : 'LO ' + (mhz / r.h).toFixed(3) + (r.h === 1 ? '' : ' ×' + r.h)) + '</em>';
+    const x = document.createElement('button');
+    x.textContent = '×';
+    x.onclick = () => { selected.delete(mhz); buildRef(); buildChips(); };
+    chip.appendChild(x);
+    c.appendChild(chip);
+  });
+  fr.sort((a, b) => a - b);
+  el('plan').textContent = fr.length + ' target(s): ' + fr.map(f => f.toFixed(3)).join(', ') +
+    ' MHz  ·  span ±' + el('span').value + ' kHz each';
+}
+
+/* The whole plan as one command; targets left out keep their value. */
+async function applyPlan() {
+  const fr = [];
+  if (selected.size) {
+    selected.forEach((v, mhz) => { if (reach(mhz).h || harmMode === 1) fr.push(mhz); });
+    if (!fr.length) { log('all selected targets are outside the LO window'); return false; }
+    fr.sort((a, b) => a - b);
+  }
+  const cmd = 'jam plan ' + el('span').value + ' ' + currentMode + ' ' + el('amp').value +
+              ' ' + el('dwell').value + ' ' + el('gain').value + ' ' + (harmMode || 'auto') +
+              (fr.length ? ' ' + fr.map(f => f.toFixed(3)).join(' ') : '');
+  return ensure(/^plan set|usage:|out of range|is not a frequency/, cmd);
+}
+
+const MODES = ['noise', 'chirp', 'cw', 'pulse'];
+
+function buildModes() {
+  MODES.forEach(m => {
+    const b = document.createElement('button');
+    b.textContent = m; b.dataset.m = m;
+    b.onclick = () => { currentMode = m; markMode(); send('jam mode ' + m); };
+    el('modes').appendChild(b);
+  });
+  markMode();
+}
+function markMode() {
+  el('modes').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === currentMode));
+}
+
+on('connect', () => connected ? disconnect() : connect());
+on('test', () => send('jam test'));
+on('stat', () => send('jam status'));
+on('info', () => send('jam info'));
+on('apply', async () => { await applyPlan(); });
+on('clear', () => { selected.clear(); buildRef(); buildChips(); });
+on('add', () => {
+  const v = parseFloat(el('manual').value);
+  if (isNaN(v) || v < 100 || v > 6000) { log('enter 100–6000 MHz'); return; }
+  toggle(Math.round(v * 1000) / 1000, 'manual', 20);
+  el('manual').value = '';
+});
+on('start', async () => {
+  if (!(await applyPlan())) return;
+  if (await ensure(/^jamming:|already jamming/, 'jam start')) {
+    running = true; setStatus('jamming', 'ok');
+  }
+  await send('jam status');
+});
+on('stop', async () => {
+  await ensure(/^stopped|^idle$/, 'jam stop');
+  running = false;
+  if (connected) setStatus('connected', 'ok');
+  await send('jam status');
+});
+on('mon', () => {
+  if (monTimer) {
+    clearInterval(monTimer); monTimer = null;
+    el('mon').textContent = 'Monitor'; el('mon').classList.remove('on');
+    return;
+  }
+  el('mon').textContent = 'Stop monitor'; el('mon').classList.add('on');
+  monTimer = setInterval(() => {
+    if (!connected || monBusy) return;
+    monBusy = true; send('jam mon 2048'); setTimeout(() => monBusy = false, 2200);
+  }, 1500);
+});
+on('send', () => { const v = el('cmd').value.trim(); if (v) { send(v); el('cmd').value = ''; } });
+
+el('search').oninput = buildRef;
+el('manual').onkeydown = e => { if (e.key === 'Enter') el('add').click(); };
+el('cmd').onkeydown = e => { if (e.key === 'Enter') el('send').click(); };
+
+el('harm').querySelectorAll('button').forEach(b => b.onclick = () => {
+  harmMode = +b.dataset.h;
+  el('harm').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  buildRef();
+  send('jam harm ' + (harmMode || 'auto'));
+});
+
+function bindSlider(id, setter) {
+  const s = el(id), out = el('v_' + id);
+  const show = () => out.textContent = s.value;
+  s.oninput = show;
+  s.onchange = () => { show(); send(setter + ' ' + s.value); if (id === 'span') buildChips(); };
+  show();
+}
+bindSlider('span', 'jam span');
+bindSlider('dwell', 'jam dwell');
+bindSlider('amp', 'jam amp');
+bindSlider('gain', 'jam gain');
+
+buildModes();
+buildRef();
+buildChips();
+window.addEventListener('beforeunload', () => { if (connected) disconnect(); });
+if (!('serial' in navigator)) setStatus('no WebSerial', 'bad');
+</script>
+</body>
+</html>

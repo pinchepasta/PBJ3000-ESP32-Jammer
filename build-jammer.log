@@ -1,0 +1,681 @@
+-- west build: generating a build system
+Loading Zephyr default modules (Zephyr base).
+-- Application: /Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer
+-- CMake version: 4.4.2
+-- Found Python3: /opt/homebrew/opt/python@3.15/bin/python3.15 (found suitable version "3.15.0", minimum required is "3.12") found components: Interpreter
+-- Cache files will be written to: /Users/feinlabsfilms/Library/Caches/zephyr
+-- Zephyr version: 4.5.0-rc1 (/Users/feinlabsfilms/esp-sdr-ws/modules/zephyr)
+-- Found west (found suitable version "1.5.0", minimum required is "0.14.0")
+-- Board: esp32s3_devkitc, qualifiers: esp32s3/procpu
+-- ZEPHYR_TOOLCHAIN_VARIANT not set, trying to locate Zephyr SDK
+-- Found host-tools: zephyr 1.0.1 (/Users/feinlabsfilms/.cache/zephyr-sdk/zephyr-sdk-1.0.1)
+-- Found toolchain: zephyr 1.0.1 (/Users/feinlabsfilms/.cache/zephyr-sdk/zephyr-sdk-1.0.1)
+-- Found Dtc: /opt/homebrew/bin/dtc (found suitable version "1.8.1", minimum required is "1.4.6")
+-- Found BOARD.dts: /Users/feinlabsfilms/esp-sdr-ws/modules/zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts
+-- Found devicetree overlay: /Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/boards/esp32s3_devkitc_procpu.overlay
+-- Generated zephyr.dts: /Users/feinlabsfilms/esp-sdr-ws/build-jammer/zephyr/zephyr.dts
+-- Generated pickled edt: /Users/feinlabsfilms/esp-sdr-ws/build-jammer/zephyr/edt.pickle
+-- Generated devicetree_generated.h: /Users/feinlabsfilms/esp-sdr-ws/build-jammer/zephyr/include/generated/zephyr/devicetree_generated.h
+
+warning: SHELL_THREAD_PRIORITY (defined at subsys/shell/Kconfig:46) was assigned the value '10' but
+got the value ''. Check these unsatisfied dependencies: SHELL_THREAD_PRIORITY_OVERRIDE (=n). See
+http://docs.zephyrproject.org/latest/kconfig.html#CONFIG_SHELL_THREAD_PRIORITY and/or look up
+SHELL_THREAD_PRIORITY in the menuconfig/guiconfig interface. The Application Development Primer,
+Setting Configuration Values, and Kconfig - Tips and Best Practices sections of the manual might be
+helpful too.
+
+Parsing /Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/Kconfig
+Loaded configuration '/Users/feinlabsfilms/esp-sdr-ws/modules/zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu_defconfig'
+Merged configuration '/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/prj.conf'
+Merged configuration '/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/boards/esp32s3_devkitc_procpu.conf'
+Configuration saved to '/Users/feinlabsfilms/esp-sdr-ws/build-jammer/zephyr/.config'
+Kconfig header saved to '/Users/feinlabsfilms/esp-sdr-ws/build-jammer/zephyr/include/generated/zephyr/autoconf.h'
+-- Could NOT find Ccache (missing: CCACHE) (Required is at least version "4.12")
+Hint: The project() command has not yet been called.  It sets up system-specific search paths.
+-- Found GnuLd: /Users/feinlabsfilms/.cache/zephyr-sdk/zephyr-sdk-1.0.1/gnu/xtensa-espressif_esp32s3_zephyr-elf/xtensa-espressif_esp32s3_zephyr-elf/bin/ld.bfd (found version "2.43.1")
+-- The C compiler identification is GNU 14.3.0
+-- The CXX compiler identification is GNU 14.3.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /Users/feinlabsfilms/.cache/zephyr-sdk/zephyr-sdk-1.0.1/gnu/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gcc
+-- Espressif HAL path: /Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif
+-- Image partition address: 0x0
+-- Found Python3: /opt/homebrew/opt/python@3.15/bin/python3.15 (found version "3.15.0") found components: Interpreter
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS - Success
+-- Found gen_kobject_list: /Users/feinlabsfilms/esp-sdr-ws/modules/zephyr/scripts/build/gen_kobject_list.py
+-- Configuring done (9.4s)
+-- Generating done (0.4s)
+-- Build files have been written to: /Users/feinlabsfilms/esp-sdr-ws/build-jammer
+-- west build: building application
+[1/602] Preparing syscall dependency handling
+
+[2/602] Generating ../../../../include/generated/zephyr/core-isa-dM.h
+[3/602] Generating include/generated/zephyr/version.h
+-- Zephyr version: 4.5.0-rc1 (/Users/feinlabsfilms/esp-sdr-ws/modules/zephyr), build: 2823501659b0
+[4/602] Generating include/generated/zephyr/app_version.h
+[5/602] Generating ../../../../include/generated/xtensa_vectors.ld
+[6/602] Generating ../../../../include/generated/zephyr/zsr.h
+[7/602] Generating misc/generated/syscalls_subdirs.trigger
+[8/602] Generating misc/generated/syscalls.json, misc/generated/struct_tags.json
+[9/602] Generating include/generated/device-api-sections.ld, include/generated/device-api-sections.cmake
+[10/602] Generating include/generated/zephyr/syscall_dispatch.c, include/generated/zephyr/syscall_exports_llext.c, syscall_weakdefs_llext.c, include/generated/zephyr/syscall_list.h
+[11/602] Generating include/generated/zephyr/driver-validation.h
+[12/602] Generating include/generated/zephyr/kobj-types-enum.h, include/generated/zephyr/otype-to-str.h, include/generated/zephyr/otype-to-size.h
+[13/602] Building C object zephyr/lib/heap/CMakeFiles/heap_constants.dir/heap_constants.c.obj
+[14/602] Generating ../../include/generated/zephyr/heap_constants.h
+[15/602] Building C object zephyr/CMakeFiles/offsets.dir/arch/xtensa/core/offsets/offsets.c.obj
+[16/602] Generating include/generated/zephyr/offsets.h
+[17/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/aria.c.obj
+[18/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/bignum.c.obj
+[19/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/aesni.c.obj
+[20/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/everest/CMakeFiles/everest.dir/library/Hacl_Curve25519_joined.c.obj
+[21/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/bignum_core.c.obj
+[22/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/everest/CMakeFiles/everest.dir/library/x25519.c.obj
+[23/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/aesce.c.obj
+[24/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/aes.c.obj
+[25/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/p256-m/CMakeFiles/p256-m.dir/p256-m/p256-m.c.obj
+[26/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/bignum_mod_raw.c.obj
+[27/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/p256-m/CMakeFiles/p256-m.dir/p256-m_driver_entrypoints.c.obj
+[28/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/cipher.c.obj
+[29/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/chachapoly.c.obj
+[30/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/camellia.c.obj
+[31/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ccm.c.obj
+[32/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/bignum_mod.c.obj
+[33/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/chacha20.c.obj
+[34/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/block_cipher.c.obj
+[35/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/cipher_wrap.c.obj
+[36/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ecp_curves_new.c.obj
+[37/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/chacha20_neon.c.obj
+[38/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ecp.c.obj
+[39/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/cmac.c.obj
+[40/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ctr_drbg.c.obj
+[41/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ecjpake.c.obj
+[42/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/entropy_poll.c.obj
+[43/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/entropy.c.obj
+[44/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/gcm.c.obj
+[45/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/md5.c.obj
+[46/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ecdsa.c.obj
+[47/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ecp_curves.c.obj
+[48/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/hmac_drbg.c.obj
+[49/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_aead.c.obj
+[50/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/poly1305.c.obj
+[51/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_hash.c.obj
+[52/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_mac.c.obj
+[53/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_pake.c.obj
+[54/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_cipher.c.obj
+[55/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_ffdh.c.obj
+[56/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/ripemd160.c.obj
+[57/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_xof.c.obj
+[58/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_rsa.c.obj
+[59/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_util_internal.c.obj
+[60/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/psa_crypto_ecp.c.obj
+[61/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/rsa_alt_helpers.c.obj
+[62/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/rsa.c.obj
+[63/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/pqcp/CMakeFiles/pqcp.dir/src/wrap_mldsa_native.c.obj
+[64/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/sha1.c.obj
+[65/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/sha3.c.obj
+[66/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/sha256.c.obj
+[67/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/lms.c.obj
+[68/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/lmots.c.obj
+[69/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/pqcp/CMakeFiles/pqcp.dir/src/psa_crypto_mldsa.c.obj
+[70/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/nist_kw.c.obj
+[71/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/CMakeFiles/builtin.dir/src/sha512.c.obj
+[72/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/pk.c.obj
+[73/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/pk_ecc.c.obj
+[74/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/md.c.obj
+[75/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/pk_wrap.c.obj
+[76/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/pkparse.c.obj
+[77/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/pkwrite.c.obj
+[78/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/extras/CMakeFiles/extras.dir/pk_rsa.c.obj
+[79/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/platform/CMakeFiles/platform.dir/platform.c.obj
+[80/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/platform/CMakeFiles/platform.dir/threading.c.obj
+[81/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/platform/CMakeFiles/platform.dir/platform_util.c.obj
+[82/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/asn1write.c.obj
+[83/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/asn1parse.c.obj
+[84/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/base64.c.obj
+[85/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/platform/CMakeFiles/platform.dir/memory_buffer_alloc.c.obj
+[86/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/pem.c.obj
+[87/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/constant_time.c.obj
+[88/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/pkcs5.c.obj
+[89/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/utilities/CMakeFiles/utilities.dir/oid.c.obj
+[90/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_crypto_storage.c.obj
+[91/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_crypto_random.c.obj
+[92/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_crypto_client.c.obj
+[93/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_its_file.c.obj
+[94/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/tf_psa_crypto_version.c.obj
+[95/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/tf_psa_crypto_config.c.obj
+[96/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_util.c.obj
+[97/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/mbedtls_config.c.obj
+[98/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/error.c.obj
+[99/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/Users/feinlabsfilms/esp-sdr-ws/modules/crypto/tf-psa-crypto/dispatch/psa_crypto_driver_wrappers_no_static.c.obj
+[100/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/pkcs7.c.obj
+[101/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509.c.obj
+[102/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509_crt.c.obj
+[103/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509_oid.c.obj
+[104/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509_csr.c.obj
+[105/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509_create.c.obj
+[106/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509_crl.c.obj
+[107/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509write_crt.c.obj
+[108/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509write.c.obj
+[109/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedx509.dir/x509write_csr.c.obj
+[110/602] Building ASM object CMakeFiles/app.dir/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/common/src/app_crash_dx.S.obj
+[111/602] Building C object zephyr/arch/common/CMakeFiles/isr_tables.dir/isr_tables.c.obj
+[112/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_crypto_slot_management.c.obj
+[113/602] Building C object CMakeFiles/app.dir/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/common/src/app_cpu.c.obj
+[114/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/libc/validate_libc.c.obj
+[115/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/boot_banner.c.obj
+[116/602] Building C object CMakeFiles/app.dir/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/common/src/app_crash.c.obj
+[117/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/printk.c.obj
+[118/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/clock.c.obj
+[119/602] Building C object CMakeFiles/app.dir/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/common/src/app_usb.c.obj
+/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/common/src/app_usb.c:35:32: warning: 'reboot_work' defined but not used [-Wunused-variable]
+   35 | static struct k_work_delayable reboot_work;
+      |                                ^~~~~~~~~~~
+[120/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/dec.c.obj
+[121/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/reboot.c.obj
+[122/602] Building C object CMakeFiles/app.dir/Users/feinlabsfilms/esp-sdr-ws/modules/zephyr/samples/subsys/usb/common/sample_usbd_init.c.obj
+[123/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/hex.c.obj
+[124/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/set.c.obj
+[125/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/mpsc_pbuf.c.obj
+[126/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/timeutil.c.obj
+[127/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/cbprintf_packaged.c.obj
+[128/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/bitmask.c.obj
+[129/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/getopt/getopt_common.c.obj
+[130/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/getopt/getopt.c.obj
+[131/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/rb.c.obj
+[132/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/notify.c.obj
+[133/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/heap/heap.c.obj
+[134/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/onoff.c.obj
+[135/602] Building C object zephyr/CMakeFiles/zephyr.dir/misc/generated/configs.c.obj
+[136/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/word_granular_access/word_granular_access_string.c.obj
+[137/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/utils/bitarray.c.obj
+[138/602] Building C object zephyr/CMakeFiles/zephyr.dir/soc/espressif/common/instr_mem.c.obj
+[139/602] Building C object CMakeFiles/app.dir/src/main.c.obj
+/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/src/main.c: In function 'mon_print':
+/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/src/main.c:774:49: warning: 'snprintf' output may be truncated before the last format character [-Wformat-truncation=]
+  774 |                 snprintf(pk, sizeof(pk), "-%d.%d", (-pt) / 10, (-pt) % 10);
+      |                                                 ^
+/Users/feinlabsfilms/esp-sdr-ws/esp-sdr-zephyr/apps/jammer/src/main.c:774:17: note: 'snprintf' output between 5 and 13 bytes into a destination of size 12
+  774 |                 snprintf(pk, sizeof(pk), "-%d.%d", (-pt) / 10, (-pt) % 10);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[140/602] Building C object zephyr/CMakeFiles/zephyr.dir/soc/espressif/common/soc_ptr_check.c.obj
+[141/602] Building C object zephyr/CMakeFiles/zephyr.dir/soc/espressif/esp32s3/soc.c.obj
+[142/602] Building C object zephyr/CMakeFiles/zephyr.dir/lib/os/cbprintf_complete.c.obj
+[143/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/logging/log_cache.c.obj
+[144/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/net/lib/utils/addr_utils.c.obj
+[145/602] Building C object zephyr/CMakeFiles/zephyr.dir/soc/espressif/esp32s3/hw_init.c.obj
+[146/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/tracing/tracing_none.c.obj
+[147/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/kernel_shell.c.obj
+[148/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/cycles.c.obj
+[149/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/logging/log_msg.c.obj
+[150/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/logging/log_mgmt.c.obj
+[151/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/logging/log_output.c.obj
+[152/602] Building C object zephyr/CMakeFiles/zephyr.dir/soc/espressif/common/loader.c.obj
+[153/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/sleep.c.obj
+[154/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/uptime.c.obj
+[155/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/logging/log_core.c.obj
+[156/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/version.c.obj
+[157/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/reboot.c.obj
+[158/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/thread/list.c.obj
+[159/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/thread/thread.c.obj
+[160/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/thread/resume.c.obj
+[161/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/thread/suspend.c.obj
+[162/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/thread/stacks.c.obj
+[163/602] Building C object modules/mbedtls/mbedtls/tf-psa-crypto/core/CMakeFiles/tfpsacrypto.dir/psa_crypto.c.obj
+[164/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/device_service.c.obj
+[165/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/kernel_service/thread/kill.c.obj
+[166/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/app_version_service.c.obj
+[167/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/date_service.c.obj
+[168/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/modules/devmem_service.c.obj
+[169/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/backends/shell_uart.c.obj
+[170/602] Linking C static library modules/mbedtls/mbedtls/tf-psa-crypto/core/libtfpsacrypto.a
+[171/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_fprintf.c.obj
+[172/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_log_backend.c.obj
+[173/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_history.c.obj
+[174/602] Building ASM object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/common/windowspill_asm.S.obj
+[175/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_wildcard.c.obj
+[176/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_help.c.obj
+[177/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_cmds.c.obj
+[178/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_ops.c.obj
+[179/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell_utils.c.obj
+[180/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/esp32s3/esp_efuse_table.c.obj
+[181/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/src/esp_efuse_fields.c.obj
+[182/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/esp32s3/esp_efuse_fields.c.obj
+[183/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_mspi/spi_flash_encrypt_hal_iram.c.obj
+[184/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/esp_gpio_reserve.c.obj
+[185/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/bootloader_support/src/flash_encrypt.c.obj
+[186/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_mspi/spi_flash_hal.c.obj
+[187/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/esp32s3/esp_efuse_utility.c.obj
+[188/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/src/esp_efuse_api.c.obj
+[189/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_mspi/spi_flash_hal_gpspi.c.obj
+[190/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/esp32s3/spi_flash_oct_flash_init.c.obj
+[191/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/src/esp_efuse_utility.c.obj
+[192/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/efuse/src/efuse_controller/keys/with_key_purposes/esp_efuse_api_key.c.obj
+[193/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_boya.c.obj
+[194/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_mspi/spi_flash_hal_iram.c.obj
+[195/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_drivers.c.obj
+[196/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/flash_ops.c.obj
+[197/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/flash_mmap.c.obj
+[198/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_issi.c.obj
+[199/602] Building C object zephyr/CMakeFiles/zephyr.dir/subsys/shell/shell.c.obj
+[200/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_gd.c.obj
+[201/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_th.c.obj
+[202/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/memspi_host_driver.c.obj
+[203/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_mxic.c.obj
+[204/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_os_func_noos.c.obj
+[205/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_hpm_enable.c.obj
+[206/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/esp_flash_spi_init.c.obj
+[207/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_winbond.c.obj
+[208/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_os_func_app.c.obj
+[209/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_uart/uart_hal_iram.c.obj
+[210/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_mxic_opi.c.obj
+[211/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_wrap.c.obj
+[212/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_security/mpu_hal.c.obj
+[213/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_uart/uart_hal.c.obj
+[214/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/bootloader_support/src/bootloader_clock_init.c.obj
+[215/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_usb/usb_wrap_hal.c.obj
+[216/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/cache_utils.c.obj
+[217/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_ana_conv/esp32s3/temperature_sensor_periph.c.obj
+[218/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/spi_flash_chip_generic.c.obj
+[219/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_gpio/esp32s3/rtc_io_periph.c.obj
+[220/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/common/console_init.c.obj
+[221/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/spi_flash/esp_flash_api.c.obj
+[222/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_gpio/rtc_io_hal.c.obj
+[223/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_clock/esp32s3/clk_tree_hal.c.obj
+[224/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_ana_conv/temperature_sensor_hal.c.obj
+[225/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/common/soc_init.c.obj
+[226/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_wdt/xt_wdt_hal.c.obj
+[227/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_systimer/systimer_hal.c.obj
+[228/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_wdt/wdt_hal_iram.c.obj
+[229/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/clk_ctrl_os.c.obj
+[230/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/bootloader_support/bootloader_flash/src/bootloader_flash_config_esp32s3.c.obj
+[231/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/bootloader_support/bootloader_flash/src/flash_qio_mode.c.obj
+[232/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/esp_memory_utils.c.obj
+[233/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/hw_random.c.obj
+[234/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/esp_clk.c.obj
+[235/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/adc_share_hw_ctrl.c.obj
+[236/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/cpu.c.obj
+[237/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/cpu_region_protect.c.obj
+[238/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/mspi/mspi_timing_tuning/port/esp32s3/mspi_timing_config.c.obj
+[239/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/mspi/mspi_timing_tuning/mspi_timing_tuning.c.obj
+[240/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/mspi/mspi_timing_tuning/port/esp32s3/mspi_timing_by_mspi_delay.c.obj
+[241/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/mac_addr.c.obj
+[242/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/esp_cpu_intr.c.obj
+[243/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_driver_gpio/src/rtc_io.c.obj
+[244/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/rtc_clk_init.c.obj
+[245/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/esp_clk_tree.c.obj
+[246/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/io_mux.c.obj
+[247/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/systimer.c.obj
+[248/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/regi2c_ctrl.c.obj
+[249/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/rtc_sleep.c.obj
+[250/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/rtc_time.c.obj
+[251/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hal_ana_conv/adc_hal_common.c.obj
+[252/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/sar_periph_ctrl_common.c.obj
+[253/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/rtc_clk.c.obj
+[254/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/rtc_init.c.obj
+[255/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp32s3/sar_periph_ctrl.c.obj
+[256/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/periph_ctrl.c.obj
+[257/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/sleep_cache.c.obj
+[258/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_mm/port/esp32s3/ext_mem_layout.c.obj
+[259/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/rtc_module.c.obj
+[260/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/port/esp_clk_tree_common.c.obj
+[261/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_mm/esp_cache_utils.c.obj
+[262/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_mm/esp_cache_msync.c.obj
+[263/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_cache_esp32s2_esp32s3.c.obj
+[264/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_crc.c.obj
+[265/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/sar_tsens_ctrl.c.obj
+[266/602] Building ASM object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_cache_writeback_esp32s3.S.obj
+[267/602] Building ASM object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_longjmp.S.obj
+[268/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_efuse.c.obj
+[269/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_gpio.c.obj
+[270/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_sys.c.obj
+[271/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_spiflash.c.obj
+[272/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_serial_output.c.obj
+[273/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_system/port/soc/esp32s3/reset_reason.c.obj
+[274/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_system/esp_err.c.obj
+[275/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_rom/patches/esp_rom_print.c.obj
+[276/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_timer/src/esp_timer_impl_common.c.obj
+[277/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_timer/src/esp_timer_impl_systimer.c.obj
+[278/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_timer/src/esp_timer_init.c.obj
+[279/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_system/port/soc/esp32s3/clk.c.obj
+[280/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/hal/efuse_hal.c.obj
+[281/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/hal/esp32s3/efuse_hal.c.obj
+[282/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_system/port/soc/esp32s3/system_internal.c.obj
+[283/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_mm/esp_mmu_map.c.obj
+[284/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_timer/src/ets_timer_legacy.c.obj
+[285/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/soc/esp32s3/gpio_periph.c.obj
+[286/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/hal/mmu_hal.c.obj
+[287/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/hal/cache_hal.c.obj
+[288/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/esp32s3/src/soc_random.c.obj
+[289/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_timer/src/esp_timer.c.obj
+[290/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/common/esp_restart.c.obj
+[291/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/esp32s3/src/soc_flash_init.c.obj
+[292/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/port/heap/heap_caps_zephyr.c.obj
+[293/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/common/flash_init.c.obj
+[294/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_phy/esp32s3/phy_init_data.c.obj
+[295/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_phy/src/phy_override.c.obj
+[296/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_phy/src/lib_printf.c.obj
+[297/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_phy/src/phy_init.c.obj
+[298/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/esp32s3/src/soc_init.c.obj
+[299/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_wifi/regulatory/esp_wifi_regulatory.c.obj
+[300/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/port/stubs/wifi_compat_stubs.c.obj
+[301/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_hw_support/sleep_modes.c.obj
+[302/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_phy/src/phy_common.c.obj
+[303/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_wifi/src/lib_printf.c.obj
+[304/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_wifi/src/wifi_init.c.obj
+[305/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/port/os_xtensa.c.obj
+[306/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_coex/esp32s3/esp_coex_adapter.c.obj
+[307/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/zephyr/port/bootloader/bootloader_flash.c.obj
+[308/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/ap_config.c.obj
+[309/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/common/sae.c.obj
+[310/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/ieee802_11.c.obj
+[311/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/ieee802_1x.c.obj
+[312/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/pmksa_cache_auth.c.obj
+[313/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/comeback_token.c.obj
+[314/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/port/eloop.c.obj
+[315/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/wpa_auth_ie.c.obj
+[316/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha256-kdf.c.obj
+[317/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/sta_info.c.obj
+[318/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/bitfield.c.obj
+[319/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-siv.c.obj
+[320/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/common/dragonfly.c.obj
+[321/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/dh_group5.c.obj
+[322/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/dh_groups.c.obj
+[323/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/ccmp.c.obj
+[324/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/crypto_ops.c.obj
+[325/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha1-tlsprf.c.obj
+[326/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha256-tlsprf.c.obj
+[327/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha1-prf.c.obj
+[328/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha256-prf.c.obj
+[329/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha384-tlsprf.c.obj
+[330/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/ms_funcs.c.obj
+[331/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-gcm.c.obj
+[332/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha384-prf.c.obj
+[333/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha1-tprf.c.obj
+[334/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_common/eap_wsc_common.c.obj
+[335/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/chap.c.obj
+[336/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/md4-internal.c.obj
+[337/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/common/wpa_common.c.obj
+[338/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_common.c.obj
+[339/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/esp_wifi/esp32s3/esp_adapter.c.obj
+[340/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/common/ieee802_11_common.c.obj
+[341/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_peap_common.c.obj
+[342/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/mschapv2.c.obj
+[343/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/ap/wpa_auth.c.obj
+[344/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_tls.c.obj
+[345/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap.c.obj
+[346/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_mschapv2.c.obj
+[347/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_fast_common.c.obj
+[348/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/rsn_supp/wpa_ie.c.obj
+[349/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/ext_password.c.obj
+[350/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_peap.c.obj
+[351/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_tls_common.c.obj
+[352/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/rsn_supp/pmksa_cache.c.obj
+[353/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/uuid.c.obj
+[354/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/wpa_debug.c.obj
+[355/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/wpabuf.c.obj
+[356/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_ttls.c.obj
+[357/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/common.c.obj
+[358/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps_attr_process.c.obj
+[359/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps_attr_build.c.obj
+[360/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps.c.obj
+[361/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_wpa2_api_port.c.obj
+[362/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps_attr_parse.c.obj
+[363/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/utils/json.c.obj
+[364/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps_dev_attr.c.obj
+[365/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps_common.c.obj
+[366/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_wpa3.c.obj
+[367/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/eap_peer/eap_fast.c.obj
+[368/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_common.c.obj
+[369/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_wpas_glue.c.obj
+[370/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_owe.c.obj
+[371/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_wpa_main.c.obj
+[372/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/wps/wps_enrollee.c.obj
+[373/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/rsn_supp/wpa.c.obj
+[374/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/pkcs1.c.obj
+[375/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/pkcs8.c.obj
+[376/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_hostap.c.obj
+[377/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_eap_client.c.obj
+[378/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/pkcs5.c.obj
+[379/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/asn1.c.obj
+[380/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/rsa.c.obj
+[381/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_common.c.obj
+[382/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/tls_internal.c.obj
+[383/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_cred.c.obj
+[384/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_client.c.obj
+[385/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/esp_supplicant/src/esp_wps.c.obj
+[386/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-ctr.c.obj
+[387/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_record.c.obj
+[388/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/rc4.c.obj
+[389/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_client_write.c.obj
+[390/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-ccm.c.obj
+[391/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-cbc.c.obj
+[392/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_client_ocsp.c.obj
+[393/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/tlsv1_client_read.c.obj
+[394/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-internal.c.obj
+[395/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-internal-enc.c.obj
+[396/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-wrap.c.obj
+[397/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-omac1.c.obj
+[398/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-internal-dec.c.obj
+[399/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/aes-unwrap.c.obj
+[400/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/bignum.c.obj
+[401/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/crypto_internal-cipher.c.obj
+[402/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/crypto_internal-modexp.c.obj
+[403/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha1-pbkdf2.c.obj
+[404/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/crypto_internal-rsa.c.obj
+[405/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/md5.c.obj
+[406/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/crypto_internal.c.obj
+[407/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/md5-internal.c.obj
+[408/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/des-internal.c.obj
+[409/602] Generating linker_zephyr_pre0.cmd
+[410/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha1-internal.c.obj
+[411/602] Building C object zephyr/CMakeFiles/zephyr.dir/kernel/sys/thread_entry.c.obj
+[412/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/tls/x509v3.c.obj
+[413/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha384-internal.c.obj
+[414/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha1.c.obj
+[415/602] Building C object zephyr/CMakeFiles/zephyr.dir/kernel/sys/sem.c.obj
+[416/602] Building C object zephyr/arch/common/CMakeFiles/arch__common.dir/init.c.obj
+[417/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha256-internal.c.obj
+[418/602] Linking C static library zephyr/arch/common/libisr_tables.a
+[419/602] Building C object zephyr/arch/common/CMakeFiles/arch__common.dir/instr_mem.c.obj
+[420/602] Building ASM object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/window_vectors.S.obj
+[421/602] Building C object zephyr/arch/common/CMakeFiles/arch__common.dir/sw_isr_common.c.obj
+[422/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha256.c.obj
+[423/602] Building ASM object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/xtensa_asm2_util.S.obj
+[424/602] Building C object zephyr/arch/common/CMakeFiles/arch__common.dir/dynamic_isr.c.obj
+[425/602] Building ASM object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/debug_helpers_asm.S.obj
+[426/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/instr_mem.c.obj
+[427/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/cpu_idle.c.obj
+[428/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/fatal.c.obj
+[429/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/prep_c.c.obj
+[430/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/assert.c.obj
+[431/602] Building C object zephyr/CMakeFiles/zephyr.dir/Users/feinlabsfilms/esp-sdr-ws/modules/hal/espressif/components/wpa_supplicant/src/crypto/sha512-internal.c.obj
+[432/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/thread.c.obj
+[433/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/cbprintf.c.obj
+[434/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/irq_manage.c.obj
+[435/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/chk_fail.c.obj
+[436/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/errno_wrap.c.obj
+[437/602] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/time/time.c.obj
+[438/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/exit.c.obj
+[439/602] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/stdlib/calloc.c.obj
+[440/602] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/stdlib/reallocarray.c.obj
+[441/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/locks.c.obj
+[442/602] Building C object zephyr/lib/libc/picolibc/CMakeFiles/lib__libc__picolibc.dir/stdio.c.obj
+[443/602] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/stdlib/abort.c.obj
+[444/602] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/errno/errno.c.obj
+[445/602] Building C object zephyr/subsys/portability/posix/c_lib_ext/CMakeFiles/subsys__portability__posix__c_lib_ext.dir/fnmatch.c.obj
+[446/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/xtensa_backtrace.c.obj
+[447/602] Building C object zephyr/subsys/portability/posix/c_lib_ext/CMakeFiles/subsys__portability__posix__c_lib_ext.dir/getentropy.c.obj
+[448/602] Building C object zephyr/lib/libc/common/CMakeFiles/lib__libc__common.dir/source/stdlib/malloc.c.obj
+[449/602] Building C object zephyr/subsys/portability/posix/c_lib_ext/CMakeFiles/subsys__portability__posix__c_lib_ext.dir/getopt_shim.c.obj
+[450/602] Building C object zephyr/subsys/random/CMakeFiles/subsys__random.dir/random_entropy_device.c.obj
+[451/602] Building C object zephyr/lib/net_buf/CMakeFiles/lib__net_buf.dir/buf_simple.c.obj
+[452/602] Building C object zephyr/lib/net_buf/CMakeFiles/lib__net_buf.dir/buf.c.obj
+[453/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_desc.c.obj
+[454/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_config.c.obj
+[455/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_interface.c.obj
+[456/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_msg.c.obj
+[457/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_endpoint.c.obj
+[458/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_init.c.obj
+[459/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_device.c.obj
+[460/602] Building C object zephyr/arch/arch/xtensa/core/CMakeFiles/arch__xtensa__core.dir/vector_handlers.c.obj
+[461/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_class.c.obj
+[462/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_core.c.obj
+[463/602] Building C object zephyr/subsys/net/l2/ethernet/CMakeFiles/subsys__net__l2__ethernet.dir/ethernet_mgmt.c.obj
+[464/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_timeout.c.obj
+[465/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/icmp.c.obj
+[466/602] Building C object zephyr/subsys/net/l2/wifi/CMakeFiles/subsys__net__l2__wifi.dir/wifi_mgmt.c.obj
+[467/602] Building C object zephyr/subsys/net/l2/wifi/CMakeFiles/subsys__net__l2__wifi.dir/wifi_utils.c.obj
+[468/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/utils.c.obj
+[469/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_core.c.obj
+[470/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_mgmt.c.obj
+[471/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/usbd_ch9.c.obj
+[472/602] Building C object zephyr/subsys/usb/device_next/CMakeFiles/subsys__usb__device_next.dir/class/usbd_cdc_acm.c.obj
+[473/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_tc.c.obj
+[474/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/nbr.c.obj
+[475/602] Building C object zephyr/subsys/net/l2/ethernet/CMakeFiles/subsys__net__l2__ethernet.dir/ethernet.c.obj
+[476/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/ipv6_mld.c.obj
+[477/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/udp.c.obj
+[478/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/route.c.obj
+[479/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/icmpv6.c.obj
+[480/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/connection.c.obj
+[481/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/route_ipv6.c.obj
+[482/602] Building C object zephyr/drivers/usb/common/buf/CMakeFiles/drivers__usb__common__buf.dir/usb_buf.c.obj
+[483/602] Building C object zephyr/drivers/cache/CMakeFiles/drivers__cache.dir/cache_esp32.c.obj
+[484/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_pkt.c.obj
+[485/602] Building C object zephyr/drivers/interrupt_controller/CMakeFiles/drivers__interrupt_controller.dir/intc_esp32.c.obj
+[486/602] Building C object zephyr/drivers/clock_control/CMakeFiles/drivers__clock_control.dir/clock_control_esp32.c.obj
+[487/602] Building C object zephyr/drivers/console/CMakeFiles/drivers__console.dir/uart_console.c.obj
+[488/602] Building C object zephyr/drivers/entropy/CMakeFiles/drivers__entropy.dir/entropy_esp32.c.obj
+[489/602] Building C object zephyr/drivers/clock_control/CMakeFiles/drivers__clock_control.dir/clock_control_esp32_rtc_cntl.c.obj
+[490/602] Building C object zephyr/drivers/hwinfo/CMakeFiles/drivers__hwinfo.dir/hwinfo_weak_impl.c.obj
+[491/602] Building C object zephyr/drivers/pinctrl/CMakeFiles/drivers__pinctrl.dir/common.c.obj
+[492/602] Building C object zephyr/drivers/serial/CMakeFiles/drivers__serial.dir/Users/feinlabsfilms/esp-sdr-ws/modules/zephyr/misc/empty_file.c.obj
+[493/602] Building C object zephyr/drivers/hwinfo/CMakeFiles/drivers__hwinfo.dir/hwinfo_esp32.c.obj
+[494/602] Building C object zephyr/drivers/timer/CMakeFiles/drivers__timer.dir/sys_clock_init.c.obj
+[495/602] Building C object zephyr/drivers/pinctrl/CMakeFiles/drivers__pinctrl.dir/pinctrl_esp32.c.obj
+[496/602] Building C object zephyr/drivers/usb/udc/CMakeFiles/drivers__usb__udc.dir/udc_common.c.obj
+[497/602] Building C object zephyr/drivers/timer/CMakeFiles/drivers__timer.dir/sys_lpm_hooks_stubs.c.obj
+[498/602] Building C object zephyr/drivers/gpio/CMakeFiles/drivers__gpio.dir/gpio_esp32.c.obj
+[499/602] Building C object zephyr/drivers/timer/CMakeFiles/drivers__timer.dir/xtensa_sys_timer.c.obj
+[500/602] Building C object zephyr/drivers/serial/CMakeFiles/drivers__serial.dir/uart_esp32.c.obj
+[501/602] Building C object modules/esp-sdr-zephyr/lib/esp_sdr/CMakeFiles/..__..__esp-sdr-zephyr__lib__esp_sdr.dir/src/esp_sdr.c.obj
+[502/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_context.c.obj
+[503/602] Building C object modules/mbedtls/CMakeFiles/modules__mbedtls.dir/zephyr_entropy.c.obj
+[504/602] Building C object modules/mbedtls/CMakeFiles/modules__mbedtls.dir/zephyr_init.c.obj
+[505/602] Building C object modules/esp-sdr-zephyr/lib/esp_sdr/CMakeFiles/..__..__esp-sdr-zephyr__lib__esp_sdr.dir/src/esp_sdr_rx.c.obj
+[506/602] Building C object modules/esp-sdr-zephyr/lib/esp_sdr/CMakeFiles/..__..__esp-sdr-zephyr__lib__esp_sdr.dir/src/esp_sdr_tx.c.obj
+[507/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/ipv6.c.obj
+[508/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/debug.c.obj
+[509/602] Linking C static library modules/mbedtls/mbedtls/library/libmbedx509.a
+[510/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/mps_trace.c.obj
+[511/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/mps_reader.c.obj
+[512/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_cache.c.obj
+[513/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/net_sockets.c.obj
+[514/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_client.c.obj
+[515/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_cookie.c.obj
+[516/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_ciphersuites.c.obj
+[517/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_debug_helpers_generated.c.obj
+[518/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_msg.c.obj
+[519/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_ticket.c.obj
+[520/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls.c.obj
+[521/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls12_client.c.obj
+[522/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls13_keys.c.obj
+[523/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls12_server.c.obj
+[524/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls13_server.c.obj
+[525/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls13_generic.c.obj
+[526/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/ssl_tls13_client.c.obj
+[527/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/version_features.c.obj
+[528/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/version.c.obj
+[529/602] Building C object modules/mbedtls/mbedtls/library/CMakeFiles/mbedtls.dir/timing.c.obj
+[530/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/busy_wait.c.obj
+[531/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/main_weak.c.obj
+[532/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/device.c.obj
+[533/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/init.c.obj
+[534/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/kheap.c.obj
+[535/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/fatal.c.obj
+[536/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/version.c.obj
+[537/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/float.c.obj
+[538/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/idle.c.obj
+[539/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/mem_slab.c.obj
+[540/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/mailbox.c.obj
+[541/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/msg_q.c.obj
+[542/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/sem.c.obj
+[543/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/stack.c.obj
+[544/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/system_work_q.c.obj
+[545/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/queue.c.obj
+[546/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/condvar.c.obj
+[547/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/sleep.c.obj
+[548/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/work.c.obj
+[549/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/thread.c.obj
+[550/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/scheduler.c.obj
+[551/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/pipe.c.obj
+[552/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/sched.c.obj
+[553/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/timeslicing.c.obj
+[554/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/mutex.c.obj
+[555/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/thread_monitor.c.obj
+[556/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/timer.c.obj
+[557/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/events.c.obj
+[558/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/mempool.c.obj
+[559/602] Linking C static library app/libapp.a
+[560/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/timeout.c.obj
+[561/602] Building C object zephyr/CMakeFiles/zephyr_pre0.dir/misc/empty_file.c.obj
+[562/602] Linking C static library zephyr/arch/common/libarch__common.a
+[563/602] Linking C static library zephyr/arch/arch/xtensa/core/libarch__xtensa__core.a
+[564/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/poll.c.obj
+[565/602] Linking C static library zephyr/lib/libc/picolibc/liblib__libc__picolibc.a
+[566/602] Linking C static library zephyr/lib/libc/common/liblib__libc__common.a
+[567/602] Linking C static library zephyr/lib/net_buf/liblib__net_buf.a
+[568/602] Linking C static library zephyr/subsys/portability/posix/c_lib_ext/libsubsys__portability__posix__c_lib_ext.a
+[569/602] Linking C static library zephyr/subsys/random/libsubsys__random.a
+[570/602] Building C object zephyr/kernel/CMakeFiles/kernel.dir/dynamic.c.obj
+[571/602] Linking C static library zephyr/subsys/net/l2/ethernet/libsubsys__net__l2__ethernet.a
+[572/602] Linking C static library zephyr/subsys/usb/device_next/libsubsys__usb__device_next.a
+[573/602] Linking C static library zephyr/subsys/net/l2/wifi/libsubsys__net__l2__wifi.a
+[574/602] Linking C static library zephyr/drivers/interrupt_controller/libdrivers__interrupt_controller.a
+[575/602] Linking C static library zephyr/drivers/usb/common/buf/libdrivers__usb__common__buf.a
+[576/602] Linking C static library zephyr/drivers/cache/libdrivers__cache.a
+[577/602] Linking C static library zephyr/drivers/clock_control/libdrivers__clock_control.a
+[578/602] Linking C static library zephyr/drivers/console/libdrivers__console.a
+[579/602] Linking C static library zephyr/drivers/entropy/libdrivers__entropy.a
+[580/602] Linking C static library zephyr/drivers/gpio/libdrivers__gpio.a
+[581/602] Linking C static library zephyr/drivers/hwinfo/libdrivers__hwinfo.a
+[582/602] Linking C static library zephyr/drivers/pinctrl/libdrivers__pinctrl.a
+[583/602] Linking C static library zephyr/drivers/serial/libdrivers__serial.a
+[584/602] Linking C static library zephyr/drivers/timer/libdrivers__timer.a
+[585/602] Linking C static library modules/mbedtls/libmodules__mbedtls.a
+[586/602] Linking C static library modules/esp-sdr-zephyr/lib/esp_sdr/lib..__..__esp-sdr-zephyr__lib__esp_sdr.a
+[587/602] Linking C static library modules/mbedtls/mbedtls/library/libmbedtls.a
+[588/602] Linking C static library zephyr/kernel/libkernel.a
+[589/602] Building C object zephyr/drivers/wifi/CMakeFiles/drivers__wifi.dir/esp32/src/esp_wifi_drv.c.obj
+[590/602] Linking C static library zephyr/drivers/wifi/libdrivers__wifi.a
+[591/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/net_if.c.obj
+[592/602] Linking C static library zephyr/libzephyr.a
+[593/602] Building C object zephyr/drivers/usb/udc/CMakeFiles/drivers__usb__udc.dir/udc_dwc2.c.obj
+[594/602] Linking C static library zephyr/drivers/usb/udc/libdrivers__usb__udc.a
+[595/602] Building C object zephyr/subsys/net/ip/CMakeFiles/subsys__net__ip.dir/ipv6_nbr.c.obj
+[596/602] Linking C static library zephyr/subsys/net/ip/libsubsys__net__ip.a
+[597/602] Linking C executable zephyr/zephyr_pre0.elf; Logical command for additional byproducts on target: zephyr_pre0
+[598/602] Generating linker.cmd
+[599/602] Generating isr_tables.c, isr_tables_vt.ld, isr_tables_swi.ld
+[600/602] Building C object zephyr/CMakeFiles/zephyr_final.dir/misc/empty_file.c.obj
+[601/602] Building C object zephyr/CMakeFiles/zephyr_final.dir/isr_tables.c.obj
+[602/602] Linking C executable zephyr/zephyr.elf
+Memory region         Used Size  Region Size  %age Used
+           FLASH:      662020 B    8388352 B      7.89%
+     iram0_0_seg:       66748 B     415492 B     16.06%
+     dram0_0_seg:      268040 B     399108 B     67.16%
+     irom0_0_seg:      408464 B        32 MB      1.22%
+     drom0_0_seg:      530948 B        32 MB      1.58%
+    rtc_iram_seg:           0 B       8168 B      0.00%
+rtc_reserved_seg:           0 B         24 B      0.00%
+    rtc_slow_seg:         120 B         8 KB      1.46%
+        IDT_LIST:           0 B         8 KB      0.00%
+Generating files from /Users/feinlabsfilms/esp-sdr-ws/build-jammer/zephyr/zephyr.elf for board: esp32s3_devkitc/esp32s3/procpu
+esptool v5.5.0
+Creating ESP32-S3 image...
+Image has only RAM segments visible. ROM segments are hidden and SHA256 digest is not appended.
+NOTE: Inserting 8 bytes padding between shell_dynamic_subcmds_area and .flash.rodata_end
+NOTE: Inserting 4 bytes padding between k_kernel_init_post_entry_area and _static_thread_data_area
+Merged 34 ELF sections.
+Successfully created ESP32-S3 image.

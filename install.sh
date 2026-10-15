@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 #
-# esp-sdr-jammer-autopatch.sh
+# esp-sdr-jammer-autopatch.sh  (rev 5)
 #
 # Turns https://github.com/cyber-murmel/esp-sdr-zephyr into a spectrum jammer
 # with an exact-frequency picker, and writes the WebSerial control page.
 # Every file it needs is embedded below: this script IS the patch.
+#
+# rev 5: the page paced its commands and applies the plan as one "jam plan"
+# line, and the shell RX ring is 2048 bytes: a burst used to overflow the
+# 64 byte ring, so the last command (jam start) was dropped and the buttons
+# looked dead while typing worked. The page also verifies every command and
+# retries once. rev 4 added truncated-save guards, rev 3 fixed the
+# cmd_harm()/cmd_amp() signatures, rev 2 fixed "Start" being silent (a retune
+# inside the transmit session left the analog front end in RX).
 #
 #   ./esp-sdr-jammer-autopatch.sh [options]
 #
@@ -12,6 +20,8 @@
 #                   $HOME/<name> if the path contains a space, because Zephyr
 #                   splits devicetree overlay paths on them.
 #   --board BOARD   default esp32s3_devkitc/esp32s3/procpu
+#   --repo URL      manifest repo (default cyber-murmel/esp-sdr-zephyr)
+#   --ref REV       manifest revision (default main)
 #   --keep-path     do not relocate a workspace whose path has spaces
 #   --multiapp      also register the app in apps/multiapp
 #   --sysbuild / --no-sysbuild
@@ -19,9 +29,13 @@
 #   --no-update / --no-build / --flash / --dfu / --force
 #   -h | --help
 #
+# The last line of this file is a sentinel; if it is missing, the save was cut.
+#
 set -euo pipefail
 
+JAM_REV="5"
 REPO_URL="https://github.com/cyber-murmel/esp-sdr-zephyr"
+REPO_REF="main"
 DEFAULT_WS="$(pwd)/esp-sdr-ws"
 BOARD="esp32s3_devkitc/esp32s3/procpu"
 DO_MULTIAPP=0; DO_UPDATE=1; DO_BUILD=1; DO_FLASH=0; DO_DFU=0
@@ -35,6 +49,8 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --ws)          DEFAULT_WS="$2"; shift 2 ;;
     --board)       BOARD="$2"; shift 2 ;;
+    --repo)        REPO_URL="$2"; shift 2 ;;
+    --ref)         REPO_REF="$2"; shift 2 ;;
     --multiapp)    DO_MULTIAPP=1; shift ;;
     --keep-path)   KEEP_PATH=1; shift ;;
     --sysbuild)    SYSBUILD=1; shift ;;
@@ -46,10 +62,17 @@ while [ $# -gt 0 ]; do
     --flash)       DO_FLASH=1; shift ;;
     --dfu)         DO_DFU=1; shift ;;
     --force)       FORCE=1; shift ;;
-    -h|--help)     sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help)     sed -n '2,30p' "$0"; exit 0 ;;
     *)             die "unknown option $1" ;;
   esac
 done
+
+# A save that was cut short fails halfway through otherwise. Say so first.
+if ! tail -n 1 "$0" | grep -qF 'end of esp-sdr-jammer-autopatch.sh'; then
+  warn "this file looks truncated: its last line is not the end marker"
+  printf '      got: %s\n' "$(tail -n 1 "$0" | cut -c1-70)"
+  printf '      re-save the whole file, then check with: bash -n %s\n' "$0"
+fi
 
 [ -n "$SYSBUILD" ] || { case "$BOARD" in *esp32s3*) SYSBUILD=1 ;; *) SYSBUILD=0 ;; esac; }
 
@@ -87,7 +110,7 @@ REPO="$WS/esp-sdr-zephyr"; APP="$REPO/apps/jammer"
 BUILD="$WS/build-jammer"; BUILD_LOG="$WS/build-jammer.log"; HTML="$WS/jammer.html"
 
 # --- 1. workspace ----------------------------------------------------------
-[ -d "$WS/.west" ] || { log "creating west workspace in $WS"; west init -m "$REPO_URL" --mr main "$WS"; }
+[ -d "$WS/.west" ] || { log "creating west workspace in $WS"; west init -m "$REPO_URL" --mr "$REPO_REF" "$WS"; }
 [ "$DO_UPDATE" = 1 ] && { log "west update (this takes a while)"; ( cd "$WS" && west update ); }
 [ -d "$REPO" ] || die "$REPO missing after west init/update"
 
@@ -127,10 +150,10 @@ log "fetching blobs (librftest: TX power steps)"
 ( cd "$WS" && west blobs fetch esp-sdr-zephyr >/dev/null 2>&1 || true )
 
 # --- 3. the app ------------------------------------------------------------
-if [ -e "$APP" ] && [ "$FORCE" != 1 ]; then
-  log "apps/jammer exists, leaving it (--force to rewrite)"
+if [ -e "$APP" ] && [ "$FORCE" != 1 ] && [ "$(cat "$APP/.jam_rev" 2>/dev/null)" = "$JAM_REV" ]; then
+  log "apps/jammer is already at rev $JAM_REV, leaving it (--force to rewrite)"
 else
-  log "writing $APP"
+  log "writing $APP (rev $JAM_REV)"
   rm -rf "$APP"
   mkdir -p "$APP/src" "$APP/boards"
 
@@ -173,6 +196,11 @@ CONFIG_SHELL_THREAD_PRIORITY=10
 CONFIG_SHELL_STACK_SIZE=4096
 CONFIG_MAIN_STACK_SIZE=3072
 CONFIG_THREAD_NAME=y
+
+# A browser sends several commands at once: the default 64 byte RX ring drops
+# characters when they arrive in a burst, and the shell then eats half a line.
+CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE=2048
+CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE=4096
 
 CONFIG_LOG=y
 CONFIG_LOG_MODE_DEFERRED=y
@@ -263,14 +291,29 @@ Transmits a jamming waveform: white noise, a sawtooth chirp, a CW carrier or
 a 1 kHz gated pulse, hopped over a list of *target* frequencies in kHz.
 
 The LO is target / harm with harm chosen automatically (1st inside the LO
-range, else 2nd, else 3rd). ESP32-S3 LO locks around 1818-2790 MHz, so
+range, else 2nd, else 3rd). ESP32-S3 LO locks around 1817-2790 MHz, so
 2.4 GHz is direct and 5-8.3 GHz rides a PA harmonic (15-25 dB down, short
-range). ``jam span`` is the half-width at the target.
+range). ``jam span`` is the half-width at the target, and it shapes the
+noise and the pulse too (two one-pole sections at the span edge).
 
 The transmit engine is a loop session (front end switched to TX once,
-gapless playback, retune between hops), as apps/rfprobe's working
-``probe tone`` does. ``jam engine play`` selects the one-shot
-esp_sdr_tx_play_for() path instead.
+gapless playback, retune between hops). **The retune is the tricky part:**
+``esp_sdr_set_freq()`` runs the RX front end sequence, which powers TX down
+and leaves the analog front end in RX, while ``esp_sdr_tx_loop_start()``
+only touches the DAC. Every retune is therefore followed by
+``esp_sdr_tx_prepare()`` (``lib/esp_sdr/src/esp_sdr_priv.h``), which puts the
+front end back into TX inside the session. Without that call the DAC plays
+into a front end that is in RX and nothing reaches the antenna -- which is
+why ``jam test`` (it tunes before opening the session) worked and
+``jam start`` did not. ``jam engine play`` selects the one-shot
+``esp_sdr_tx_play_for()`` path instead, which handles the front end itself.
+
+``jam plan`` sets the whole plan in one line, so a browser can apply it with
+a single command (a burst of commands loses characters in the shell's RX
+ring, which is why the control page paces its writes and verifies them).
+
+Settings are re-read between hops, so the mode buttons and the sliders act
+while jamming.
 
 If nothing transmits, run ``jam test``: it puts a 2441.1 MHz carrier on air
 for 3 s and prints every return code. Then ``jam status`` for counters.
@@ -279,6 +322,7 @@ Shell::
 
   jam test / jam status   # is it actually transmitting
   jam ref                 # what lives on which frequency
+  jam plan 39000 noise 450 40 -1 auto 2412 2437   # span mode amp dwell gain harm MHz...
   jam lo 2412 2437 2462   # exact targets, MHz, decimals allowed
   jam harm auto           # or 1 / 2 / 3
   jam span 12000          # half-width at the target, kHz
@@ -294,17 +338,30 @@ JAM_EOF
  *
  * apps/jammer -- an ESP-SDR spectrum jammer with exact-frequency targets.
  *
- * Transmit engine: a loop session by default (esp_sdr_tx_loop_*), the same
- * path apps/rfprobe's "probe tone" uses. The front end is switched to TX
- * once, playback is gapless, and the LO is retuned between hops; the thread
- * sleeps during a dwell instead of busy-waiting. "jam engine play" selects
- * the one-shot esp_sdr_tx_play_for() path instead.
+ * Transmit engine: a loop session (esp_sdr_tx_loop_*) opened once. It holds
+ * the radio, playback is gapless and the LO is retuned between hops.
+ *
+ * The one thing that made "jam start" silent while "jam test" worked:
+ * esp_sdr_set_freq() runs esp_sdr_rx_prepare(), which powers the TX path down
+ * and puts the analog front end back into RX. esp_sdr_tx_loop_start() only
+ * touches the DAC, so after a retune the DAC was playing into a front end in
+ * RX and nothing reached the antenna. Every retune is therefore followed by
+ * esp_sdr_tx_prepare() (lib/esp_sdr/src/esp_sdr_priv.h), which switches the
+ * front end back to TX inside the session. "jam test" never hit this because
+ * it tunes before opening the session.
+ *
+ * "jam plan" sets everything in one line: a burst of shell commands can lose
+ * characters in the shell's RX ring, and then half a line is executed.
+ *
+ * Settings are re-read from the shell between hops, so the mode buttons and
+ * the sliders act while jamming.
  *
  * Every radio call's return code is reported: the first few print, and
  * "jam status" keeps counters. "jam test" puts a real carrier on air.
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -326,25 +383,49 @@ JAM_EOF
 #include "app_usb.h"
 #endif
 
+/*
+ * Library internals (lib/esp_sdr/src/esp_sdr_priv.h): the front end to TX at
+ * the current gains, to be called with the radio lock held -- which it is
+ * inside a loop session. It undoes the RX sequence esp_sdr_set_freq() runs.
+ */
+extern void esp_sdr_tx_prepare(void);
+
 #define TWO_PI         6.28318530717958647692
 #define JAM_MAX_HOPS   32
 #define JAM_BANK_WORDS ESP_SDR_SAMPLES_MAX
 #define JAM_PRIO       12
+#define JAM_STACK      6144	/* the waveform builders use the FPU */
 #define MON_BINS       48
 #define MON_MAXN       2048
 
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
+/* The LO plan stays below the PLL's own floor: attempted, may not lock. */
 #define JAM_LO_MIN_KHZ  1514000U
+/* Measured PLL floor: below this the VCO ends outside its window. */
+#define JAM_PLL_MIN_KHZ 1817000U
 #define JAM_LO_MAX_KHZ  2790000U
 #elif defined(CONFIG_SOC_SERIES_ESP32C5)
 #define JAM_LO_MIN_KHZ   100000U
+#define JAM_PLL_MIN_KHZ  100000U
 #define JAM_LO_MAX_KHZ  6000000U
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 #define JAM_LO_MIN_KHZ  2400000U
+#define JAM_PLL_MIN_KHZ 2400000U
 #define JAM_LO_MAX_KHZ  2500000U
 #else
 #define JAM_LO_MIN_KHZ   100000U
+#define JAM_PLL_MIN_KHZ  100000U
 #define JAM_LO_MAX_KHZ  6000000U
+#endif
+
+/* CONFIG_FPU_SHARING: a thread that touches the FPU must say so. */
+#if defined(CONFIG_FPU)
+#if !defined(K_FP_REGS)
+#define K_FP_REGS BIT(1)
+#endif
+#define JAM_THREAD_OPT K_FP_REGS
+#else
+#define JAM_THREAD_OPT 0
 #endif
 
 enum jam_mode { JAM_NOISE, JAM_CHIRP, JAM_CW, JAM_PULSE };
@@ -372,14 +453,17 @@ static volatile bool jam_stop;
 static volatile bool jam_active;
 
 static struct k_thread jam_tcb;
-static K_THREAD_STACK_DEFINE(jam_stack, 4096);
+static K_THREAD_STACK_DEFINE(jam_stack, JAM_STACK);
 
 /* Only the one-shot "play" engine needs a separate source buffer. */
 static uint32_t jam_bank[JAM_BANK_WORDS];
 static uint32_t rng_state = 0x9e3779b9u;
 
+/* Last LO offset handed to the library: 0 has to be written back too. */
+static int32_t jam_last_off = INT32_MIN;
+
 /* Diagnostics: a silent failure used to look exactly like success. */
-static volatile uint32_t jam_dwells, jam_errors;
+static volatile uint32_t jam_dwells, jam_errors, jam_range_warn;
 static volatile int jam_last_ret;
 static volatile const char *jam_last_where = "none";
 
@@ -477,6 +561,21 @@ static bool reachable(uint32_t target_khz, int harm)
 	return lo >= JAM_LO_MIN_KHZ && lo <= JAM_LO_MAX_KHZ;
 }
 
+/* Below the measured PLL floor: tuned, but the VCO may not lock. */
+static bool marginal(uint32_t target_khz, int harm)
+{
+	uint32_t lo = lo_of(target_khz, harm);
+
+	return lo >= JAM_LO_MIN_KHZ && lo < JAM_PLL_MIN_KHZ;
+}
+
+/* Does the waveform have to be rebuilt for these settings? */
+static bool wave_key_changed(const jam_cfg_t *a, const jam_cfg_t *b)
+{
+	return a->mode != b->mode || a->amp != b->amp || a->span_khz != b->span_khz ||
+	       a->harm != b->harm;
+}
+
 /* ---- waveforms ---- */
 
 static inline uint32_t rng32(void)
@@ -495,8 +594,20 @@ static inline int rnd(int amp)
 	return (int)((rng32() >> 20) % (uint32_t)(2 * amp + 1)) - amp;
 }
 
-static void fill_noise(uint32_t *w, size_t n, int amp, uint32_t gate_hz, double fs)
+static inline int16_t clamp511(long v)
 {
+	return (int16_t)CLAMP(v, -511, 511);
+}
+
+/*
+ * Noise, shaped to +-half by two one-pole sections so the span slider does
+ * something in noise and pulse mode too, then scaled back up so the level
+ * does not change with the span. Full band when the span reaches fs / 2.
+ * gate_hz != 0 gates the noise on for a quarter of the period.
+ */
+static void fill_noise(uint32_t *w, size_t n, int amp, uint32_t gate_hz, double fs, double half)
+{
+	double a = 1.0, g = 1.0, y1i = 0.0, y1q = 0.0, y2i = 0.0, y2q = 0.0;
 	size_t period = 0, on = 0;
 
 	if (gate_hz != 0U) {
@@ -506,10 +617,26 @@ static void fill_noise(uint32_t *w, size_t n, int amp, uint32_t gate_hz, double 
 		}
 		on = period / 4U;
 	}
+	if (half > 0.0 && half < fs * 0.45) {
+		a = 1.0 - exp(-TWO_PI * half / fs);
+		a = CLAMP(a, 0.01, 1.0);
+		/* Two poles lose (a / (2 - a))^2 in amplitude; back it out. */
+		g = ((2.0 - a) / a) * ((2.0 - a) / a);
+	}
 	for (size_t k = 0; k < n; k++) {
-		int a = (period == 0U || (k % period) < on) ? amp : 0;
+		bool open = period == 0U || (k % period) < on;
+		double xi = open ? (double)rnd(amp) : 0.0;
+		double xq = open ? (double)rnd(amp) : 0.0;
 
-		w[k] = esp_sdr_tx_word((int16_t)rnd(a), (int16_t)rnd(a));
+		if (a < 1.0) {
+			y1i += a * (xi - y1i);
+			y2i += a * (y1i - y2i);
+			y1q += a * (xq - y1q);
+			y2q += a * (y1q - y2q);
+			xi = y2i * g;
+			xq = y2q * g;
+		}
+		w[k] = esp_sdr_tx_word(clamp511(lround(xi)), clamp511(lround(xq)));
 	}
 }
 
@@ -556,10 +683,10 @@ static void build_wave(uint32_t *dst, size_t n, const jam_cfg_t *r, int harm, do
 	}
 	switch (r->mode) {
 	case JAM_NOISE:
-		fill_noise(dst, n, r->amp, 0U, fs);
+		fill_noise(dst, n, r->amp, 0U, fs, half);
 		break;
 	case JAM_PULSE:
-		fill_noise(dst, n, r->amp, 1000U, fs);
+		fill_noise(dst, n, r->amp, 1000U, fs, half);
 		break;
 	case JAM_CHIRP:
 		fill_chirp(dst, n, r->amp, -half, half, fs);
@@ -570,20 +697,54 @@ static void build_wave(uint32_t *dst, size_t n, const jam_cfg_t *r, int harm, do
 	}
 }
 
+/*
+ * Retune the LO. -ERANGE means "tuned, but the VCO ended outside its tuning
+ * window": counted and tolerated, never a reason to skip the hop. The offset
+ * is only written when it changes, and 0 is written back as well.
+ */
+static int jam_tune(uint32_t lo_khz)
+{
+	int32_t off = (int32_t)(lo_khz % 1000U);
+	int ret = esp_sdr_set_freq(lo_khz / 1000U);
+
+	if (ret == -ERANGE) {
+		jam_range_warn++;
+	}
+	if (ret != 0 && ret != -ERANGE) {
+		return ret;
+	}
+	if (off != jam_last_off) {
+		jam_last_off = off;
+		ret = esp_sdr_set_freq_offset(off);
+		if (ret == -ERANGE) {
+			jam_range_warn++;
+		}
+		if (ret != 0 && ret != -ERANGE) {
+			return ret;
+		}
+	}
+	return 0;
+}
+
 /* ---- the jammer thread ---- */
 
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
 /*
  * Loop engine: one session, front end in TX for its whole duration, gapless
- * playback, retune between hops. This is what apps/rfprobe's probe tone does.
+ * playback, retune between hops. Every retune is followed by
+ * esp_sdr_tx_prepare(): esp_sdr_set_freq() goes through the RX front end
+ * sequence, and loop_start() does not switch the front end back, so without
+ * that call nothing reaches the antenna.
  */
-static void jam_run_loop(const jam_cfg_t *r)
+static void jam_run_loop(const jam_cfg_t *r0)
 {
-	enum esp_sdr_rate rate = r->rate;
+	jam_cfg_t r = *r0;
+	enum esp_sdr_rate rate = r.rate;
 	uint32_t fs = esp_sdr_tx_rate_hz(rate);
 	uint32_t *bank;
 	size_t words = 0;
-	int gain = r->gain;
+	int built_harm = -1;
+	int applied_gain = INT_MIN;
 	int ret;
 
 	if (fs == 0U) {
@@ -600,13 +761,6 @@ static void jam_run_loop(const jam_cfg_t *r)
 	if (ret != 0) {
 		report_err("tx_lpf", ret);
 	}
-	if (gain < 0) {
-		gain = esp_sdr_tx_gain_max();
-	}
-	ret = esp_sdr_tx_set_gain(gain);
-	if (ret != 0) {
-		report_err("tx_gain", ret);
-	}
 
 	ret = esp_sdr_tx_loop_begin(rate);
 	if (ret != 0) {
@@ -621,23 +775,59 @@ static void jam_run_loop(const jam_cfg_t *r)
 		return;
 	}
 	words = MIN(words, (size_t)ESP_SDR_SAMPLES_MAX);
-	build_wave(bank, words, r, harm_of(r, r->hop[0]), (double)fs);
 
 	while (!jam_stop) {
-		for (int h = 0; h < r->n_hop && !jam_stop; h++) {
-			int hh = harm_of(r, r->hop[h]);
-			uint32_t lo = lo_of(r->hop[h], hh);
+		jam_cfg_t s;
+		int gain;
 
-			if (!reachable(r->hop[h], hh)) {
+		/* Read between hops: the page's sliders stay live. */
+		k_mutex_lock(&cfg_lock, K_FOREVER);
+		s = cfg;
+		k_mutex_unlock(&cfg_lock);
+
+		if (s.n_hop <= 0) {
+			k_msleep(20);
+			continue;
+		}
+		if (wave_key_changed(&s, &r)) {
+			/* Only writable while the engine is halted. */
+			esp_sdr_tx_loop_halt();
+			built_harm = -1;
+			r = s;
+		}
+		gain = s.gain < 0 ? esp_sdr_tx_gain_max() : s.gain;
+		if (gain != applied_gain) {
+			ret = esp_sdr_tx_set_gain(gain);
+			if (ret != 0) {
+				report_err("tx_gain", ret);
+			}
+			applied_gain = gain;
+		}
+
+		for (int h = 0; h < s.n_hop && !jam_stop; h++) {
+			int hh = harm_of(&s, s.hop[h]);
+			uint32_t lo = lo_of(s.hop[h], hh);
+
+			if (!reachable(s.hop[h], hh)) {
 				report_err("range", -ERANGE);
 				continue;
 			}
-			ret = esp_sdr_set_freq(lo / 1000U);
+			if (hh != built_harm) {
+				esp_sdr_tx_loop_halt();
+				build_wave(bank, words, &s, hh, (double)fs);
+				built_harm = hh;
+			}
+			ret = jam_tune(lo);
 			if (ret != 0) {
 				report_err("set_freq", ret);
 				continue;
 			}
-			(void)esp_sdr_set_freq_offset((int32_t)(lo % 1000U));
+			/*
+			 * jam_tune() left the front end in RX (that is what
+			 * esp_sdr_set_freq() does); put it back into TX or the
+			 * DAC plays into a receiver. This is the fix.
+			 */
+			esp_sdr_tx_prepare();
 
 			ret = esp_sdr_tx_loop_start(0, words);
 			if (ret != 0) {
@@ -645,22 +835,23 @@ static void jam_run_loop(const jam_cfg_t *r)
 				continue;
 			}
 			jam_dwells++;
-			for (uint32_t t = 0; t < r->dwell_ms && !jam_stop; t += 20U) {
-				k_msleep(MIN(20U, r->dwell_ms - t));
+			for (uint32_t t = 0; t < s.dwell_ms && !jam_stop; t += 20U) {
+				k_msleep(MIN(20U, s.dwell_ms - t));
 			}
-			esp_sdr_tx_loop_halt();
 		}
 	}
 	esp_sdr_tx_loop_end();
 }
 
 /* One-shot engine: esp_sdr_tx_play_for() per dwell, our buffer tiled in. */
-static void jam_run_play(const jam_cfg_t *r)
+static void jam_run_play(const jam_cfg_t *r0)
 {
-	enum esp_sdr_rate rate = r->rate;
+	jam_cfg_t r = *r0;
+	enum esp_sdr_rate rate = r.rate;
 	uint32_t fs = esp_sdr_tx_rate_hz(rate);
 	size_t n = JAM_BANK_WORDS;
-	int gain = r->gain;
+	int built_harm = -1;
+	int applied_gain = INT_MIN;
 	int ret;
 
 	if (fs == 0U) {
@@ -674,30 +865,52 @@ static void jam_run_play(const jam_cfg_t *r)
 
 	(void)esp_sdr_rx_set_lpf(0);
 	(void)esp_sdr_tx_set_lpf(0, 0);
-	if (gain < 0) {
-		gain = esp_sdr_tx_gain_max();
-	}
-	(void)esp_sdr_tx_set_gain(gain);
-	build_wave(jam_bank, n, r, harm_of(r, r->hop[0]), (double)fs);
 
 	while (!jam_stop) {
-		for (int h = 0; h < r->n_hop && !jam_stop; h++) {
-			int hh = harm_of(r, r->hop[h]);
-			uint32_t lo = lo_of(r->hop[h], hh);
+		jam_cfg_t s;
+		int gain;
 
-			if (!reachable(r->hop[h], hh)) {
+		k_mutex_lock(&cfg_lock, K_FOREVER);
+		s = cfg;
+		k_mutex_unlock(&cfg_lock);
+
+		if (s.n_hop <= 0) {
+			k_msleep(20);
+			continue;
+		}
+		if (wave_key_changed(&s, &r)) {
+			r = s;
+			built_harm = -1;
+		}
+		gain = s.gain < 0 ? esp_sdr_tx_gain_max() : s.gain;
+		if (gain != applied_gain) {
+			(void)esp_sdr_tx_set_gain(gain);
+			applied_gain = gain;
+		}
+
+		for (int h = 0; h < s.n_hop && !jam_stop; h++) {
+			int hh = harm_of(&s, s.hop[h]);
+			uint32_t lo = lo_of(s.hop[h], hh);
+
+			if (!reachable(s.hop[h], hh)) {
 				report_err("range", -ERANGE);
 				continue;
 			}
-			ret = esp_sdr_set_freq(lo / 1000U);
+			if (hh != built_harm) {
+				build_wave(jam_bank, n, &s, hh, (double)fs);
+				built_harm = hh;
+			}
+			/*
+			 * play_for() takes the radio and switches the front end
+			 * itself, so retuning between the calls is safe here.
+			 */
+			ret = jam_tune(lo);
 			if (ret != 0) {
 				report_err("set_freq", ret);
 				continue;
 			}
-			(void)esp_sdr_set_freq_offset((int32_t)(lo % 1000U));
-
 			ret = esp_sdr_tx_play_for(rate, jam_bank, n,
-						  MIN(r->dwell_ms, ESP_SDR_TX_PLAY_MAX_MS), NULL);
+						  MIN(s.dwell_ms, ESP_SDR_TX_PLAY_MAX_MS), NULL);
 			if (ret != 0) {
 				report_err("play_for", ret);
 				continue;
@@ -725,11 +938,12 @@ static bool paced_input(void *user, int16_t *i, int16_t *q)
 	return true;
 }
 
-static void jam_run_paced(const jam_cfg_t *r)
+static void jam_run_paced(const jam_cfg_t *r0)
 {
+	jam_cfg_t r = *r0;
 	uint32_t pmin = 0U, pmax = 0U;
 	unsigned int power = esp_sdr_tx_paced_power_max();
-	uint32_t rate = r->prate_khz * 1000U;
+	uint32_t rate = r.prate_khz * 1000U;
 	int ret;
 
 	if (rate == 0U) {
@@ -738,9 +952,19 @@ static void jam_run_paced(const jam_cfg_t *r)
 	esp_sdr_tx_paced_range(&pmin, &pmax);
 
 	while (!jam_stop) {
-		for (int h = 0; h < r->n_hop && !jam_stop; h++) {
-			int hh = harm_of(r, r->hop[h]);
-			uint32_t mhz = lo_of(r->hop[h], hh) / 1000U;
+		jam_cfg_t s;
+
+		k_mutex_lock(&cfg_lock, K_FOREVER);
+		s = cfg;
+		k_mutex_unlock(&cfg_lock);
+
+		if (s.n_hop <= 0) {
+			k_msleep(20);
+			continue;
+		}
+		for (int h = 0; h < s.n_hop && !jam_stop; h++) {
+			int hh = harm_of(&s, s.hop[h]);
+			uint32_t mhz = lo_of(s.hop[h], hh) / 1000U;
 			int64_t until;
 
 			if (mhz < pmin || mhz > pmax) {
@@ -759,7 +983,7 @@ static void jam_run_paced(const jam_cfg_t *r)
 				continue;
 			}
 			esp_sdr_paced_sync();
-			until = (int64_t)k_uptime_get() + (int64_t)r->dwell_ms;
+			until = (int64_t)k_uptime_get() + (int64_t)s.dwell_ms;
 			while (!jam_stop) {
 				for (int k = 0; k < 128; k++) {
 					(void)esp_sdr_tx_paced_poll();
@@ -811,7 +1035,7 @@ static int jam_start(void)
 	k_sem_reset(&jam_done);
 	jam_stop = false;
 	k_thread_create(&jam_tcb, jam_stack, K_THREAD_STACK_SIZEOF(jam_stack), jam_thread,
-			NULL, NULL, NULL, JAM_PRIO, 0, K_NO_WAIT);
+			NULL, NULL, NULL, JAM_PRIO, JAM_THREAD_OPT, K_NO_WAIT);
 	k_thread_name_set(&jam_tcb, "jammer");
 	jam_active = true;
 	return 0;
@@ -896,6 +1120,21 @@ static void mon_print(const struct shell *sh, const struct esp_sdr_rx_burst *b)
 
 /* ---- shell ---- */
 
+static void plan_lines(const struct shell *sh, const jam_cfg_t *c)
+{
+	for (int h = 0; h < c->n_hop; h++) {
+		int hh = harm_of(c, c->hop[h]);
+		uint32_t lo = lo_of(c->hop[h], hh);
+
+		shell_print(sh, "  %u.%03u -> LO %u.%03u MHz x%d  +/-%u.%03u%s%s",
+			    c->hop[h] / 1000U, c->hop[h] % 1000U,
+			    lo / 1000U, lo % 1000U, hh,
+			    c->span_khz / 1000U, c->span_khz % 1000U,
+			    reachable(c->hop[h], hh) ? "" : "  UNREACHABLE",
+			    marginal(c->hop[h], hh) ? "  MARGINAL (below the PLL window)" : "");
+	}
+}
+
 static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -905,23 +1144,14 @@ static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 		    mode_name[cfg.mode], cfg.harm ? "forced" : "auto", cfg.span_khz,
 		    cfg.dwell_ms, cfg.amp, cfg.gain, cfg.engine ? "play" : "loop");
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
-	shell_print(sh, "DAC %s  LO window %u..%u MHz",
+	shell_print(sh, "DAC %s  LO window %u..%u MHz (PLL from %u MHz)",
 		    cfg.rate == ESP_SDR_RATE_40MSPS ? "40 MS/s" : "80 MS/s",
-		    JAM_LO_MIN_KHZ / 1000U, JAM_LO_MAX_KHZ / 1000U);
+		    JAM_LO_MIN_KHZ / 1000U, JAM_LO_MAX_KHZ / 1000U, JAM_PLL_MIN_KHZ / 1000U);
 #else
 	shell_print(sh, "paced TX %u kHz  LO window %u..%u MHz", cfg.prate_khz,
 		    JAM_LO_MIN_KHZ / 1000U, JAM_LO_MAX_KHZ / 1000U);
 #endif
-	for (int h = 0; h < cfg.n_hop; h++) {
-		int hh = harm_of(&cfg, cfg.hop[h]);
-		uint32_t lo = lo_of(cfg.hop[h], hh);
-
-		shell_print(sh, "  %u.%03u -> LO %u.%03u MHz x%d  +/-%u.%03u%s",
-			    cfg.hop[h] / 1000U, cfg.hop[h] % 1000U,
-			    lo / 1000U, lo % 1000U, hh,
-			    cfg.span_khz / 1000U, cfg.span_khz % 1000U,
-			    reachable(cfg.hop[h], hh) ? "" : "  UNREACHABLE");
-	}
+	plan_lines(sh, &cfg);
 	shell_print(sh, "state %s", jam_active ? "JAMMING" : "idle");
 	return 0;
 }
@@ -937,6 +1167,10 @@ static int cmd_status(const struct shell *sh, size_t argc, char **argv)
 	if (jam_errors) {
 		shell_print(sh, "last error: %s -> %d",
 			    (const char *)jam_last_where, jam_last_ret);
+	}
+	if (jam_range_warn) {
+		shell_print(sh, "range warnings %u (VCO outside its window: tuned, may not lock)",
+			    jam_range_warn);
 	}
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
 	shell_print(sh, "gain %d (max %d)  amp %d  span %u kHz  LO %u MHz",
@@ -1023,7 +1257,8 @@ static int cmd_ref(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "  2332.5-2345 SiriusXM.");
 	shell_print(sh, "Direct, sub-2.4: 1880-1900 DECT; 1805-1880 GSM1800 DL;");
 	shell_print(sh, "  1850-1910 GSM1900 DL; 1930-1990 UMTS B2 DL; 2110-2170 UMTS B1 DL;");
-	shell_print(sh, "  1575.42 GPS L1 (marginal); 1616.5 Iridium (marginal).");
+	shell_print(sh, "  1575.42 GPS L1 (marginal, below the PLL window);");
+	shell_print(sh, "  1616.5 Iridium (marginal).");
 	shell_print(sh, "5 GHz: 5150-5250 UNII-1 ch36/40/44/48 (indoor);");
 	shell_print(sh, "  5250-5350 UNII-2A ch52-64 (DFS); 5470-5725 UNII-2C ch100-144 (DFS);");
 	shell_print(sh, "  5725-5850 UNII-3 ch149-165; 5850-5925 UNII-4 + C-V2X 5905.");
@@ -1044,7 +1279,9 @@ static int cmd_mode(const struct shell *sh, size_t argc, char **argv)
 	}
 	for (int m = 0; m < (int)ARRAY_SIZE(mode_name); m++) {
 		if (strcmp(argv[1], mode_name[m]) == 0) {
+			k_mutex_lock(&cfg_lock, K_FOREVER);
 			cfg.mode = (enum jam_mode)m;
+			k_mutex_unlock(&cfg_lock);
 			shell_print(sh, "mode %s", mode_name[m]);
 			return 0;
 		}
@@ -1056,9 +1293,11 @@ static int cmd_mode(const struct shell *sh, size_t argc, char **argv)
 static int cmd_engine(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
+		k_mutex_lock(&cfg_lock, K_FOREVER);
 		cfg.engine = strcmp(argv[1], "play") == 0 ? 1 : 0;
+		k_mutex_unlock(&cfg_lock);
 	}
-	shell_print(sh, "engine %s", cfg.engine ? "play" : "loop");
+	shell_print(sh, "engine %s (takes effect on the next start)", cfg.engine ? "play" : "loop");
 	return 0;
 }
 
@@ -1090,89 +1329,200 @@ static int cmd_band(const struct shell *sh, size_t argc, char **argv)
 	memcpy(cfg.hop, b->target_khz, sizeof(uint32_t) * (size_t)b->n);
 	k_mutex_unlock(&cfg_lock);
 	shell_print(sh, "band %s: %d target(s), span %u kHz", b->name, b->n, b->span_khz);
+	plan_lines(sh, &cfg);
 	return 0;
 }
 
+/* Parse everything first: a bad value must not leave a half-applied plan. */
 static int cmd_lo(const struct shell *sh, size_t argc, char **argv)
 {
+	uint32_t hop[JAM_MAX_HOPS];
 	int n = 0;
 
 	if (argc < 2) {
-		for (int h = 0; h < cfg.n_hop; h++) {
-			shell_print(sh, "  %u.%03u MHz", cfg.hop[h] / 1000U, cfg.hop[h] % 1000U);
-		}
+		plan_lines(sh, &cfg);
 		return 0;
 	}
 	for (size_t i = 1; i < argc && n < JAM_MAX_HOPS; i++) {
-		double v = strtod(argv[i], NULL);
-		long khz = lround(v * 1000.0);
+		char *end;
+		double v = strtod(argv[i], &end);
+		long khz;
 
+		if (end == argv[i]) {
+			shell_error(sh, "%s is not a frequency", argv[i]);
+			return -EINVAL;
+		}
+		khz = lround(v * 1000.0);
 		if (khz < 100000 || khz > 6000000) {
 			shell_error(sh, "%s MHz out of range", argv[i]);
 			return -EINVAL;
 		}
-		cfg.hop[n++] = (uint32_t)khz;
+		hop[n++] = (uint32_t)khz;
 	}
+	if (n == 0) {
+		shell_error(sh, "no target");
+		return -EINVAL;
+	}
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	memcpy(cfg.hop, hop, sizeof(hop[0]) * (size_t)n);
 	cfg.n_hop = n;
+	k_mutex_unlock(&cfg_lock);
 	shell_print(sh, "%d target(s) set", n);
+	plan_lines(sh, &cfg);
+	return 0;
+}
+
+/*
+ * plan <span_khz> <mode> <amp> <dwell_ms> <gain> <harm|auto> [MHz ...]:
+ * the whole plan in one line, so the control page can apply it with a single
+ * command instead of a burst. Targets left out are kept.
+ */
+static int cmd_plan(const struct shell *sh, size_t argc, char **argv)
+{
+	jam_cfg_t c;
+	uint32_t hop[JAM_MAX_HOPS];
+	int n = 0, mode = -1;
+
+	if (argc < 7) {
+		shell_error(sh, "usage: jam plan <span_khz> <mode> <amp> <dwell_ms> <gain> <harm|auto> [MHz ...]");
+		return -EINVAL;
+	}
+	for (int m = 0; m < (int)ARRAY_SIZE(mode_name); m++) {
+		if (strcmp(argv[2], mode_name[m]) == 0) {
+			mode = m;
+		}
+	}
+	if (mode < 0) {
+		shell_error(sh, "mode: noise chirp cw pulse");
+		return -EINVAL;
+	}
+	for (size_t i = 7; i < argc && n < JAM_MAX_HOPS; i++) {
+		char *end;
+		double v = strtod(argv[i], &end);
+		long khz;
+
+		if (end == argv[i]) {
+			shell_error(sh, "%s is not a frequency", argv[i]);
+			return -EINVAL;
+		}
+		khz = lround(v * 1000.0);
+		if (khz < 100000 || khz > 6000000) {
+			shell_error(sh, "%s MHz out of range", argv[i]);
+			return -EINVAL;
+		}
+		hop[n++] = (uint32_t)khz;
+	}
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	c = cfg;
+	c.span_khz = (uint32_t)CLAMP(strtol(argv[1], NULL, 0), 10, 40000);
+	c.mode = (enum jam_mode)mode;
+	c.amp = (int)CLAMP(strtol(argv[3], NULL, 0), 1, 511);
+	c.dwell_ms = (uint32_t)CLAMP(strtol(argv[4], NULL, 0), 5, 5000);
+	c.gain = (int)strtol(argv[5], NULL, 0);
+	c.harm = strcmp(argv[6], "auto") == 0 ? 0 : (int)CLAMP(strtol(argv[6], NULL, 0), 0, 3);
+	if (n > 0) {
+		memcpy(c.hop, hop, sizeof(hop[0]) * (size_t)n);
+		c.n_hop = n;
+	}
+	cfg = c;
+	k_mutex_unlock(&cfg_lock);
+
+	shell_print(sh, "plan set: %d target(s), %s, span %u kHz, dwell %u ms, amp %d, gain %d",
+		    cfg.n_hop, mode_name[cfg.mode], cfg.span_khz, cfg.dwell_ms, cfg.amp,
+		    cfg.gain);
+	plan_lines(sh, &cfg);
 	return 0;
 }
 
 static int cmd_harm(const struct shell *sh, size_t argc, char **argv)
 {
+	int harm;
+
 	if (argc > 1 && strcmp(argv[1], "auto") == 0) {
-		cfg.harm = 0;
+		harm = 0;
 	} else {
-		cfg.harm = (int)CLAMP(arg(argv, argc, 1, 0), 0, 3);
+		harm = (int)CLAMP(arg(argv, argc, 1, 0), 0, 3);
 	}
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.harm = harm;
+	k_mutex_unlock(&cfg_lock);
 	shell_print(sh, "harm %s", cfg.harm ? "forced" : "auto");
 	return 0;
 }
 
 static int cmd_span(const struct shell *sh, size_t argc, char **argv)
 {
-	cfg.span_khz = (uint32_t)CLAMP(arg(argv, argc, 1, 12000), 10, 40000);
-	shell_print(sh, "span %u kHz at the target", cfg.span_khz);
+	uint32_t span = (uint32_t)CLAMP(arg(argv, argc, 1, 12000), 10, 40000);
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.span_khz = span;
+	k_mutex_unlock(&cfg_lock);
+	shell_print(sh, "span %u kHz at the target", span);
 	return 0;
 }
 
 static int cmd_dwell(const struct shell *sh, size_t argc, char **argv)
 {
-	cfg.dwell_ms = (uint32_t)CLAMP(arg(argv, argc, 1, 40), 5, 5000);
-	shell_print(sh, "dwell %u ms", cfg.dwell_ms);
+	uint32_t dwell = (uint32_t)CLAMP(arg(argv, argc, 1, 40), 5, 5000);
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.dwell_ms = dwell;
+	k_mutex_unlock(&cfg_lock);
+	shell_print(sh, "dwell %u ms", dwell);
 	return 0;
 }
 
 static int cmd_amp(const struct shell *sh, size_t argc, char **argv)
 {
-	cfg.amp = (int)CLAMP(arg(argv, argc, 1, 450), 1, 511);
-	shell_print(sh, "amp %d", cfg.amp);
+	int amp = (int)CLAMP(arg(argv, argc, 1, 450), 1, 511);
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.amp = amp;
+	k_mutex_unlock(&cfg_lock);
+	shell_print(sh, "amp %d", amp);
 	return 0;
 }
 
 static int cmd_gain(const struct shell *sh, size_t argc, char **argv)
 {
-	cfg.gain = (int)arg(argv, argc, 1, -1);
-	shell_print(sh, "gain %d (-1 = strongest)", cfg.gain);
+	int gain = (int)arg(argv, argc, 1, -1);
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.gain = gain;
+	k_mutex_unlock(&cfg_lock);
+	shell_print(sh, "gain %d (-1 = strongest)", gain);
 	return 0;
 }
 
 static int cmd_rate(const struct shell *sh, size_t argc, char **argv)
 {
-	cfg.rate = arg(argv, argc, 1, 0) == 0 ? ESP_SDR_RATE_80MSPS : ESP_SDR_RATE_40MSPS;
-	shell_print(sh, "DAC rate %s", cfg.rate == ESP_SDR_RATE_80MSPS ? "80 MS/s" : "40 MS/s");
+	enum esp_sdr_rate rate = arg(argv, argc, 1, 0) == 0 ? ESP_SDR_RATE_80MSPS
+							    : ESP_SDR_RATE_40MSPS;
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.rate = rate;
+	k_mutex_unlock(&cfg_lock);
+	shell_print(sh, "DAC rate %s (takes effect on the next start)",
+		    rate == ESP_SDR_RATE_80MSPS ? "80 MS/s" : "40 MS/s");
 	return 0;
 }
 
 static int cmd_prate(const struct shell *sh, size_t argc, char **argv)
 {
-	cfg.prate_khz = (uint32_t)CLAMP(arg(argv, argc, 1, 1000), 10, 4000);
-	shell_print(sh, "paced rate %u kHz", cfg.prate_khz);
+	uint32_t prate = (uint32_t)CLAMP(arg(argv, argc, 1, 1000), 10, 4000);
+
+	k_mutex_lock(&cfg_lock, K_FOREVER);
+	cfg.prate_khz = prate;
+	k_mutex_unlock(&cfg_lock);
+	shell_print(sh, "paced rate %u kHz", prate);
 	return 0;
 }
 
 static int cmd_start(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret;
+
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
@@ -1180,11 +1530,23 @@ static int cmd_start(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "already jamming");
 		return 0;
 	}
+	/* Idempotent: recovers a start if the boot-time init did not take. */
+	ret = esp_sdr_init();
+	if (ret != 0) {
+		shell_error(sh, "radio not up: esp_sdr_init %d", ret);
+	}
+	if (cfg.n_hop <= 0) {
+		shell_error(sh, "no target: jam lo <MHz>");
+		return -EINVAL;
+	}
 	if (jam_start() != 0) {
 		shell_error(sh, "start failed");
 		return -EIO;
 	}
-	shell_print(sh, "jamming: %s, %d target(s)", mode_name[cfg.mode], cfg.n_hop);
+	shell_print(sh, "jamming: %s, %d target(s), first %u.%03u MHz, engine %s",
+		    mode_name[cfg.mode], cfg.n_hop, cfg.hop[0] / 1000U, cfg.hop[0] % 1000U,
+		    cfg.engine ? "play" : "loop");
+	plan_lines(sh, &cfg);
 	return 0;
 }
 
@@ -1198,7 +1560,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char **argv)
 		return 0;
 	}
 	jam_stop_run();
-	shell_print(sh, "stopped");
+	shell_print(sh, "stopped after %u dwell(s), %u error(s)", jam_dwells, jam_errors);
 	return 0;
 }
 
@@ -1236,6 +1598,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(jam_cmds,
 	SHELL_CMD_ARG(mode, NULL, "[noise|chirp|cw|pulse]", cmd_mode, 1, 1),
 	SHELL_CMD_ARG(engine, NULL, "[loop|play]", cmd_engine, 1, 1),
 	SHELL_CMD_ARG(band, NULL, "[name] preset", cmd_band, 1, 1),
+	SHELL_CMD_ARG(plan, NULL,
+		      "<span_khz> <mode> <amp> <dwell_ms> <gain> <harm|auto> [MHz ...]",
+		      cmd_plan, 7, JAM_MAX_HOPS),
 	SHELL_CMD_ARG(lo, NULL, "<MHz> [MHz ...] exact targets, decimals ok", cmd_lo, 1, JAM_MAX_HOPS),
 	SHELL_CMD_ARG(harm, NULL, "[auto|1|2|3] LO = target / harm", cmd_harm, 1, 1),
 	SHELL_CMD_ARG(span, NULL, "<kHz> half width at the target", cmd_span, 2, 0),
@@ -1279,16 +1644,21 @@ int main(void)
 JAM_MAIN_C
 
   cat "$REPO/VERSION" > "$APP/VERSION"
+  printf '%s\n' "$JAM_REV" > "$APP/.jam_rev"
+  tail -n 1 "$APP/src/main.c" | grep -q '^}' || warn "apps/jammer/src/main.c looks truncated"
   log "wrote $(find "$APP" -type f | wc -l) files into apps/jammer"
 fi
 
 # --- 4. the WebSerial control page -----------------------------------------
-if [ -e "$HTML" ] && [ "$FORCE" != 1 ]; then
-  log "jammer.html exists, leaving it (--force to rewrite)"
+# A half-written page (cut save) has no rev marker or no closing tag: rewrite it.
+if [ -e "$HTML" ] && [ "$FORCE" != 1 ] && grep -q "JAMREV:$JAM_REV" "$HTML" \
+   && tail -n 1 "$HTML" | grep -q '</html>'; then
+  log "jammer.html is already at rev $JAM_REV, leaving it (--force to rewrite)"
 else
   log "writing $HTML"
   cat > "$HTML" <<'JAM_HTML'
 <!doctype html>
+<!-- JAMREV:5 -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -1364,6 +1734,7 @@ else
   .refrow .r.d{color:#b7f0cd;border-color:#2c5a40}
   .refrow .r.h2{color:#ffe0a3;border-color:#5a4a20}
   .refrow .r.h3{color:#f5c2c2;border-color:#5a2c2c}
+  .refrow .r.warn{color:#ffe0a3;border-color:#5a4a20}
   .refrow.out{opacity:.5}
   .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .seg button{flex:1;border:0;border-radius:0;background:transparent}
@@ -1412,6 +1783,9 @@ else
     <button id="start" class="acc">Start jamming</button>
     <button id="stop" class="stop">Stop</button>
   </div>
+  <p class="note">Start applies the plan and then starts. Mode and the sliders act
+  <b>while jamming</b>. Commands go out one at a time and every one is
+  confirmed in the log, so a dropped character cannot leave you guessing.</p>
 </div>
 
 <div class="card">
@@ -1423,7 +1797,7 @@ else
   <div class="sl"><label>Digital amplitude <b><span id="v_amp"></span></b></label>
     <input type="range" id="amp" min="10" max="511" step="1" value="450"></div>
   <div class="sl"><label>TX power step <b><span id="v_gain"></span></b> (−1 = strongest)</label>
-    <input type="range" id="gain" min="-1" max="31" step="1" value="-1"></div>
+    <input type="range" id="gain" min="-1" max="17" step="1" value="-1"></div>
   <div class="sl"><label>Harmonic</label>
     <div class="seg" id="harm">
       <button data-h="0" class="on">auto</button>
@@ -1433,8 +1807,8 @@ else
     </div>
   </div>
   <p class="note">Span is the half-width <b>at the target</b>; the baseband is
-  span/harm. For a whole band pick the row whose width matches, not a single
-  channel row — a 22 MHz channel row sets span to 1.1 MHz.</p>
+  span/harm. Pick the row whose width matches the thing you want to cover
+  (a whole band, or one 22 MHz channel row for that channel).</p>
 </div>
 
 <div class="card">
@@ -1466,16 +1840,92 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 let port = null, writer = null, reader = null, reading = false, connected = false;
 let running = false, rxbuf = "", pending = "", monTimer = null, monBusy = false;
-let wq = Promise.resolve(), monHeader = null, harmMode = 0, currentMode = "noise";
+let monHeader = null, harmMode = 0, currentMode = "noise";
 const lines = [];
 const selected = new Map();
 
+/*
+ * The device's shell has a small RX ring: writing several commands at once
+ * loses characters, and the shell then eats half a command line. So writes go
+ * out one at a time, spaced, and every important command is verified.
+ */
+const GAP_MS = 40;
+const outq = [];
+let pumping = false;
+
+async function pump() {
+  if (pumping) return;
+  pumping = true;
+  while (outq.length) {
+    const it = outq.shift();
+    if (writer) {
+      try {
+        await Promise.race([writer.write(enc.encode(it.cmd + '\r')), sleep(1200)]);
+      } catch (e) {
+        log('write failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+    if (it.done) it.done();
+    await sleep(it.gap);
+  }
+  pumping = false;
+}
+
+function send(cmd, gap = GAP_MS) {
+  if (!writer) return Promise.resolve();
+  if (outq.length > 64) outq.splice(0, outq.length - 64);
+  return new Promise(done => { outq.push({ cmd, gap, done }); pump(); });
+}
+
+/* Resolves true when a line matching re arrives, false on timeout. */
+let waiters = [];
+function expect(re, ms = 2500) {
+  return new Promise(res => {
+    const w = { re, res };
+    w.t = setTimeout(() => { waiters = waiters.filter(x => x !== w); res(false); }, ms);
+    waiters.push(w);
+  });
+}
+function feedWaiters(line) {
+  if (!waiters.length) return;
+  waiters = waiters.filter(w => {
+    if (w.re.test(line)) { clearTimeout(w.t); w.res(true); return false; }
+    return true;
+  });
+}
+
+/* Send a command and insist on a reply; one retry after flushing a partial line. */
+async function ensure(re, cmd, tries = 2) {
+  for (let i = 1; i <= tries; i++) {
+    const p = expect(re, 2500);
+    await send(cmd);
+    if (await p) return true;
+    log('no reply to "' + cmd + '"' + (i < tries ? ' -- retrying' : ''));
+    if (i < tries) await send('');
+  }
+  log('WARNING: "' + cmd + '" was not confirmed -- press it again');
+  return false;
+}
+
+const on = (id, fn) => {
+  el(id).onclick = async () => {
+    try { await fn(); } catch (e) { log('error: ' + (e && e.message ? e.message : e)); }
+  };
+};
+
+/*
+ * The S3 PLL locks about 1817..2790 MHz (doc/hardware-quirks.md). Below that
+ * the LO is still attempted (marginal, may not lock); outside 1514..2790 the
+ * firmware skips the hop, so those rows are dropped here too.
+ */
+const LO_MIN = 1817, LO_MAX = 2790, LO_TRY_MIN = 1514;
+
 function reach(t) {
-  if (t >= 1514 && t <= 2790) return { h: 1, cls: "d", lbl: "direct" };
-  const h2 = t / 2, h3 = t / 3;
-  if (h2 >= 1514 && h2 <= 2790) return { h: 2, cls: "h2", lbl: "2nd harm" };
-  if (h3 >= 1514 && h3 <= 2790) return { h: 3, cls: "h3", lbl: "3rd harm" };
-  return { h: 0, cls: "out", lbl: "out of range" };
+  const h = t <= LO_MAX ? 1 : (t / 2 <= LO_MAX ? 2 : 3);
+  const lo = t / h;
+  if (lo > LO_MAX || lo < LO_TRY_MIN) return { h: 0, cls: "out", lbl: "out of range" };
+  if (lo < LO_MIN) return { h, cls: "warn", lbl: "marginal" };
+  return { h, cls: h === 1 ? "d" : "h" + h, lbl: h === 1 ? "direct" : (h === 2 ? "2nd harm" : "3rd harm") };
 }
 
 const REF = [
@@ -1575,7 +2025,9 @@ async function connect() {
     setStatus('connected', 'ok');
     el('connect').textContent = 'Disconnect';
     readLoop();
-    await sleep(200); await send(''); await send('jam info'); await send('jam status');
+    await send('');
+    await ensure(/^state /, 'jam status');
+    await send('jam info');
     try { await navigator.wakeLock.request('screen'); } catch (e) {}
   } catch (e) {
     setStatus('failed', 'bad');
@@ -1586,6 +2038,7 @@ async function connect() {
 async function disconnect() {
   reading = false; connected = false;
   if (monTimer) { clearInterval(monTimer); monTimer = null; el('mon').textContent = 'Monitor'; }
+  while (outq.length) { const it = outq.shift(); if (it.done) it.done(); }
   try { if (reader) { await reader.cancel(); reader.releaseLock(); } } catch (e) {}
   try { if (writer) writer.releaseLock(); } catch (e) {}
   try { if (port) await port.close(); } catch (e) {}
@@ -1611,12 +2064,6 @@ async function readLoop() {
   if (connected) { connected = false; setStatus('lost', 'bad'); }
 }
 
-function send(cmd) {
-  if (!writer) return Promise.resolve();
-  wq = wq.then(() => writer.write(enc.encode(cmd + '\r'))).catch(() => {});
-  return wq;
-}
-
 const RE_MON = /mon f=(\d+)\.(\d{3}) h=(\d+)\.(\d{3}) b=(\d+) w=(\d+)\.(\d{2}) p=(-?\d+)\.(\d)/;
 const RE_BAR = /^\s*\|([^|]+)\|\s*$/;
 
@@ -1625,6 +2072,15 @@ function onLine(raw) {
   if (line.indexOf('mon f=') >= 0 && line.indexOf(' p=') < 0) { pending = line; return; }
   pending = '';
   log(line);
+  feedWaiters(line);
+
+  /* The device is the authority on what it is doing. */
+  if (/state JAMMING|^jamming:/.test(line)) { running = true; setStatus('jamming', 'ok'); }
+  else if (/^state idle|^stopped|^already jamming|^idle$/.test(line)) {
+    running = false; if (connected) setStatus('connected', 'ok');
+  } else if (/failed \(|not up|UNREACHABLE/.test(line) && connected) {
+    setStatus('check log', 'bad');
+  }
 
   let m = line.match(RE_MON);
   if (m) {
@@ -1699,7 +2155,8 @@ function toggle(mhz, what, w) {
   if (selected.has(mhz)) selected.delete(mhz);
   else selected.set(mhz, { what, w });
   if (selected.size === 1) {
-    const want = Math.min(40000, Math.max(200, Math.ceil((w / 2) / 100) * 100));
+    /* Half width at the target = half the row's width, in kHz. */
+    const want = Math.min(40000, Math.max(100, Math.round(w * 500 / 100) * 100));
     el('span').value = want; el('v_span').textContent = want;
   }
   buildRef(); buildChips();
@@ -1728,23 +2185,18 @@ function buildChips() {
     ' MHz  ·  span ±' + el('span').value + ' kHz each';
 }
 
+/* The whole plan as one command; targets left out keep their value. */
 async function applyPlan() {
-  if (!selected.size) { log('nothing selected, leaving the radio as it is'); }
-  else {
-    const fr = [];
+  const fr = [];
+  if (selected.size) {
     selected.forEach((v, mhz) => { if (reach(mhz).h || harmMode === 1) fr.push(mhz); });
-    if (!fr.length) { log('all selected targets are outside the LO window'); return; }
-    if (running) await send('jam stop');
-    await send('jam harm ' + (harmMode || 'auto'));
-    await send('jam lo ' + fr.map(f => f.toFixed(3)).join(' '));
+    if (!fr.length) { log('all selected targets are outside the LO window'); return false; }
+    fr.sort((a, b) => a - b);
   }
-  if (running) await send('jam stop');
-  await send('jam span ' + el('span').value);
-  await send('jam mode ' + currentMode);
-  await send('jam amp ' + el('amp').value);
-  await send('jam dwell ' + el('dwell').value);
-  await send('jam gain ' + el('gain').value);
-  if (running) await send('jam start'); else await send('jam status');
+  const cmd = 'jam plan ' + el('span').value + ' ' + currentMode + ' ' + el('amp').value +
+              ' ' + el('dwell').value + ' ' + el('gain').value + ' ' + (harmMode || 'auto') +
+              (fr.length ? ' ' + fr.map(f => f.toFixed(3)).join(' ') : '');
+  return ensure(/^plan set|usage:|out of range|is not a frequency/, cmd);
 }
 
 const MODES = ['noise', 'chirp', 'cw', 'pulse'];
@@ -1762,31 +2214,47 @@ function markMode() {
   el('modes').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.m === currentMode));
 }
 
-el('connect').onclick = () => connected ? disconnect() : connect();
-el('test').onclick = () => send('jam test');
-el('stat').onclick = () => send('jam status');
-el('search').oninput = buildRef;
-el('add').onclick = () => {
+on('connect', () => connected ? disconnect() : connect());
+on('test', () => send('jam test'));
+on('stat', () => send('jam status'));
+on('info', () => send('jam info'));
+on('apply', async () => { await applyPlan(); });
+on('clear', () => { selected.clear(); buildRef(); buildChips(); });
+on('add', () => {
   const v = parseFloat(el('manual').value);
   if (isNaN(v) || v < 100 || v > 6000) { log('enter 100–6000 MHz'); return; }
   toggle(Math.round(v * 1000) / 1000, 'manual', 20);
   el('manual').value = '';
-};
-el('manual').onkeydown = e => { if (e.key === 'Enter') el('add').click(); };
-el('clear').onclick = () => { selected.clear(); buildRef(); buildChips(); };
-el('apply').onclick = applyPlan;
-el('start').onclick = async () => { await applyPlan(); await send('jam start'); running = true; setStatus('jamming', 'ok'); await send('jam status'); };
-el('stop').onclick = async () => { await send('jam stop'); running = false; setStatus('connected', 'ok'); };
-el('info').onclick = () => send('jam info');
-el('mon').onclick = () => {
-  if (monTimer) { clearInterval(monTimer); monTimer = null; el('mon').textContent = 'Monitor'; el('mon').classList.remove('on'); return; }
+});
+on('start', async () => {
+  if (!(await applyPlan())) return;
+  if (await ensure(/^jamming:|already jamming/, 'jam start')) {
+    running = true; setStatus('jamming', 'ok');
+  }
+  await send('jam status');
+});
+on('stop', async () => {
+  await ensure(/^stopped|^idle$/, 'jam stop');
+  running = false;
+  if (connected) setStatus('connected', 'ok');
+  await send('jam status');
+});
+on('mon', () => {
+  if (monTimer) {
+    clearInterval(monTimer); monTimer = null;
+    el('mon').textContent = 'Monitor'; el('mon').classList.remove('on');
+    return;
+  }
   el('mon').textContent = 'Stop monitor'; el('mon').classList.add('on');
   monTimer = setInterval(() => {
     if (!connected || monBusy) return;
-    monBusy = true; send('jam mon 2048'); setTimeout(() => monBusy = false, 2500);
-  }, 1200);
-};
-el('send').onclick = () => { const v = el('cmd').value.trim(); if (v) { send(v); el('cmd').value = ''; } };
+    monBusy = true; send('jam mon 2048'); setTimeout(() => monBusy = false, 2200);
+  }, 1500);
+});
+on('send', () => { const v = el('cmd').value.trim(); if (v) { send(v); el('cmd').value = ''; } });
+
+el('search').oninput = buildRef;
+el('manual').onkeydown = e => { if (e.key === 'Enter') el('add').click(); };
 el('cmd').onkeydown = e => { if (e.key === 'Enter') el('send').click(); };
 
 el('harm').querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -1817,6 +2285,7 @@ if (!('serial' in navigator)) setStatus('no WebSerial', 'bad');
 </body>
 </html>
 JAM_HTML
+  tail -n 1 "$HTML" | grep -q '</html>' || warn "$HTML looks truncated"
 fi
 
 # --- 5. optional multiapp registration -------------------------------------
@@ -1830,7 +2299,7 @@ else:
     a = "# Buffers of the apps that never run the receive ring"
     if a not in s: sys.exit("multiapp: anchor not found")
     p.write_text(s.replace(a, "# The jammer, from its own sources.\n"
-        "multiapp_extension(jammer STACK 4096 SOURCES ${apps_dir}/jammer/src/main.c)\n\n" + a, 1))
+        "multiapp_extension(jammer STACK 6144 SOURCES ${apps_dir}/jammer/src/main.c)\n\n" + a, 1))
     print("multiapp: registered jammer")
 PY
 fi
@@ -1893,7 +2362,7 @@ fi
 
 cat <<JAM_EOF
 
-done.
+done.  (rev $JAM_REV)
 
   workspace    : $WS
   control page : $HTML
@@ -1904,12 +2373,18 @@ Flash:  cd "$WS" && west flash -d build-jammer --erase --esp-device /dev/cu.usbs
 
 AFTER FLASHING, on the page:
   1. Connect
-  2. "Test carrier (3 s)"  -> watch the log. A carrier at 2441.1 MHz.
-     If that works, the radio path is fine and jamming will too.
-     If a line reads "xxx failed (-N)", that is the fault, and
-     "Status / errors" repeats it.
-  3. Pick a band row (the "whole ISM band" row, not a 22 MHz channel row),
-     then Start.
-  4. To hear the effect, watch a Wi-Fi analyser app on a second phone.
+  2. "Test carrier (3 s)"  -> a 2441.1 MHz carrier for 3 s. If a line reads
+     "xxx failed (-N)", that is the fault, and "Status / errors" repeats it.
+  3. Pick a row ("whole ISM band", or one channel row for that channel), Start.
+     The log shows "plan set: ..." and "jamming: ..." -- both are confirmed,
+     and a missing reply is reported instead of failing silently.
+  4. Stop prints how many dwells ran. Mode, span, amp, dwell and gain act
+     while jamming.
+  5. To hear the effect, watch a Wi-Fi analyser app on a second phone.
+
+If Start is silent again: "jam status" shows dwells and the last error, and
+"jam engine play" switches to the one-shot playback path (which sets the
+front end up itself) to tell a front end problem from a waveform one.
 
 JAM_EOF
+# end of esp-sdr-jammer-autopatch.sh (rev 5)

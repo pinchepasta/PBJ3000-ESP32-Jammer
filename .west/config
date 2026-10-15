@@ -1,0 +1,7 @@
+[manifest]
+path = esp-sdr-zephyr
+file = west.yml
+
+[zephyr]
+base = modules/zephyr
+
