@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "ESP-SDR stream"
+
+config APP_SDR
+	bool "Run the radio"
+	default y
+	help
+	  Disable to bring up USB and the network alone: the app then sends
+	  one small test datagram per second instead of capturing.
+
+config APP_FREQ_MHZ
+	int "LO frequency in MHz at boot (shared by RX and TX)"
+	range 100 6000
+	default 2412
+
+config APP_RX_RATE
+	int "Capture rate (enum esp_sdr_rate index)"
+	range 0 6
+	default 6
+	help
+	  0: 80 MS/s, 1: 40 MS/s, 6: 16 MS/s. A VITA command can switch to
+	  this rate divided by an integer (decimated stream).
+
+config APP_RX_BURST_SAMPLES
+	int "Complex samples per burst"
+	range 256 16380
+	default 1404
+	help
+	  Raw bursts at the capture rate, and the most a decimated burst may
+	  hold. 1404 fills whole signal data packets at every item size: 3 at
+	  12 bit (468 each), 2 at 8 bit (704), 4 at 16 bit (352). USB moves a
+	  limited number of datagrams per second, so a part-filled packet costs
+	  as much as a full one.
+
+config APP_RX_BURSTS
+	int "Burst buffers between the capture and process cores"
+	default 3
+	help
+	  Each holds APP_RX_BURST_SAMPLES * 4 bytes, in the internal SRAM
+	  above the capture bank (ESP_SDR_HIGH_RAM).
+
+config APP_NET_CPU
+	int "CPU for the network and USB threads (-1: not pinned)"
+	range -1 1
+	default 0
+	help
+	  Pins the cooperative and high priority system threads (net TX/RX
+	  queues, net_mgmt, usbd, UDC, system work queue, Wi-Fi events) to
+	  this CPU, the capture CPU, so they never delay the process thread or
+	  the DAC leader on the other one.
+
+config APP_RX_BURST_INTERVAL_MS
+	int "Pause between bursts in ms (0: back to back)"
+	default 0
+
+config APP_RX_STREAM_ID
+	hex "VITA 49 stream identifier of the receive stream"
+	help
+	  Command packets to this stream ID set the receiver; any other
+	  stream ID addresses the transmitter.
+	default 0x5d5d0001
+
+config APP_RX_SAMPLES_PER_PACKET
+	int "Complex samples per IF data packet"
+	range 1 1000
+	default 352
+	help
+	  352 samples plus six header and trailer words fit a 1500 byte
+	  IPv6 UDP datagram.
+
+config APP_RX_UDP_PEER
+	string "IPv6 destination of the receive stream"
+	default "ff02::1"
+	help
+	  The default link-local all-nodes group reaches the host without
+	  any address setup on either side.
+
+config APP_RX_UDP_PORT
+	int "UDP destination port of the receive stream"
+	default 4991
+
+config APP_TX
+	bool "Transmit VITA 49.2 signal data from the host"
+	default y
+	select ESP_SDR_TX
+	help
+	  Signal data and command packets on UDP; samples go to the
+	  esp_sdr_tx streaming backend (the DAC backend with
+	  CONFIG_ESP_SDR_TX_DAC, else the stub).
+
+config APP_TX_UDP_PORT
+	int "UDP port for transmit and command packets"
+	default 4992
+	depends on APP_TX
+
+config APP_TX_RATE
+	int "Transmit sample rate until a command sets one"
+	default 100000
+	depends on APP_TX
+
+rsource "../common/Kconfig"
+
+# USB device helpers shared with the in-tree USB samples.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

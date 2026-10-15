@@ -1,0 +1,23 @@
+sample:
+  name: ESP-SDR capture
+  description: Raw I/Q burst captures from the ESP32-S3/C6/C5 Wi-Fi receiver
+common:
+  tags: esp-sdr
+  platform_allow:
+    - xiao_esp32s3/esp32s3/procpu
+    - xiao_esp32c6/esp32c6/hpcore
+    - waveshare_esp32c5_zero/esp32c5/hpcore
+  integration_platforms:
+    - xiao_esp32s3/esp32s3/procpu
+    - xiao_esp32c6/esp32c6/hpcore
+    - waveshare_esp32c5_zero/esp32c5/hpcore
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "esp-sdr rx: ready"
+      - "esp-sdr rx: 2412 MHz, 80 MS/s, lpf -1, 4096 samples"
+      - "esp-sdr rx: survey done, 0 failed"
+tests:
+  sample.esp_sdr.capture: {}

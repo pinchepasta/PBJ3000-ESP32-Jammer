@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+manifest:
+  self:
+    path: esp-sdr-zephyr
+    west-commands: scripts/west-commands.yml
+
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+    - name: cyber-murmel
+      url-base: https://github.com/cyber-murmel
+    - name: espargos
+      url-base: https://github.com/ESPARGOS
+    - name: espressif
+      url-base: https://github.com/espressif
+
+  projects:
+    # Zephyr with ESP32-S3 SMP (zephyrproject-rtos/zephyr#120082, rebased), the
+    # CDC-NCM NTB aggregation the USB stream relies on, and the llext and
+    # Xtensa changes apps/multiapp needs (doc/multiapp.md, "Zephyr changes").
+    - name: zephyr
+      remote: cyber-murmel
+      revision: 2823501659b0eb52da8884196fa24cd53ee66276 # esp-sdr-multiapp branch
+      path: modules/zephyr
+      import:
+        name-allowlist:
+          - fatfs
+          - mcuboot
+          - mbedtls
+          - tf-psa-crypto
+    # The HAL companion of the SMP port; listed here so it overrides the
+    # revision Zephyr's own manifest pins.
+    - name: hal_espressif
+      remote: cyber-murmel
+      revision: 54d64a1289e8d0cddccef6359a385ffb4c68b213 # esp-sdr branch
+      path: modules/hal/espressif
+      groups:
+        - hal
+    # VITA 49 packet library, extended to VITA 49.2, with a Zephyr module.
+    - name: libvrt
+      remote: cyber-murmel
+      revision: 6ee1471079b969d843aa2f7dbc6ac74c086168a2 # esp-sdr branch
+      path: modules/lib/libvrt
+    # Upstream ESP-IDF firmware: only its header-only receiver helpers are used.
+    - name: esp-sdr
+      remote: espargos
+      revision: 1fe55351036337359bcac1ccca6db04c32fde4f8
+      path: modules/lib/esp-sdr
+    # Espressif DSP library: only the ESP32-S3 FFT kernel (apps/link OFDM).
+    - name: esp-dsp
+      remote: espressif
+      revision: 3c8ac0fdfec83740b783e200862c8d0c056de0ad
+      path: modules/lib/esp-dsp

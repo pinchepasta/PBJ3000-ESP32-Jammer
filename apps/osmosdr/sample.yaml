@@ -1,0 +1,16 @@
+sample:
+  name: ESP-SDR osmosdr
+  description: >-
+    USB SDR after HackRF's model: gapless decimated receive and transmit
+    over vendor bulk endpoints, for osmosdr / GNU Radio hosts
+common:
+  tags: esp-sdr
+  sysbuild: true
+  platform_allow:
+    - xiao_esp32s3/esp32s3/procpu
+  integration_platforms:
+    - xiao_esp32s3/esp32s3/procpu
+tests:
+  # Needs a host and boards: run tools/esdr_usb (see README).
+  sample.esp_sdr.osmosdr:
+    build_only: true

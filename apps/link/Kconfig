@@ -1,0 +1,141 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "ESP-SDR link"
+
+config APP_FREQ_MHZ
+	int "Carrier frequency in MHz"
+	range 100 6000
+	default 2412
+
+config APP_TX_GAIN
+	int "Transmit power step at boot (0 weakest)"
+	range 0 17
+	default 0
+
+config APP_RX_GAIN
+	int "Receive gain index at boot (-1: hardware AGC)"
+	range -1 82
+	default 0
+	help
+	  A fixed gain keeps the level steady across a capture; the AGC
+	  reacts to the frame itself.
+
+config APP_SPS
+	int "Samples per symbol (even)"
+	range 4 16
+	default 4
+	help
+	  At 80 MS/s: 4 is 20 Mbaud (27 MHz occupied), 6 is 13.3 Mbaud
+	  (18 MHz). With the PHY in its 20 MHz mode (APP_CBW 0) the analog
+	  filters pass about +-10 MHz, where 6 fits better. Both ends must
+	  agree.
+
+config APP_CBW
+	int "PHY channel bandwidth flag (esp_sdr_set_channel_bw())"
+	range 0 2
+	default 2
+	help
+	  2 widens the analog filters past +-10 MHz (measured: -14 instead of
+	  -21 dB at 11 MHz) and lifts the MER by about 1.5 dB at 20 Mbaud.
+
+config APP_RX_BW_MHZ
+	int "Receive filter bandwidth in MHz (0: widest, -1: the PHY's setting)"
+	range -1 69
+	default 0
+	help
+	  Otherwise 13 to 69 MHz (1 to 12 fail the build). The PHY's own
+	  setting is about 22 MHz wide, narrower than the
+	  27 MHz the 20 Mbaud signal occupies.
+
+config APP_AMP
+	int "RMS amplitude of a frame in DAC steps"
+	range 1 300
+	default 150
+
+config APP_DATA_AIR_US
+	int "Time a data frame stays on air, in us"
+	default 700
+	help
+	  The frame repeats in a loop for this long. It must cover a
+	  listener's sense slot, its reaction and one full capture window
+	  (205 us), so that the window holds one whole copy.
+
+config APP_ACK_AIR_US
+	int "Time an ACK stays on air, in us"
+	default 700
+
+config APP_ACK_TIMEOUT_US
+	int "How long a sender listens for the ACK, in us"
+	default 25000
+	help
+	  From the end of its frame: covers the receiver's capture, decode
+	  and switch to transmit.
+
+config APP_TURN_US
+	int "Front end settling at each TX/RX switch, in us"
+	range 0 3000
+	default 3000
+	help
+	  esp_sdr_set_turnaround(). Each frame and each ACK switches twice,
+	  so this bounds the frame rate of the stop and wait link.
+
+config APP_TURN_RETUNE
+	bool "Reprogram the LO at each TX/RX switch"
+	default y
+
+config APP_CCA_DB
+	int "Carrier sense threshold above the noise floor, in dB"
+	default 10
+
+config APP_RADIO_CPU
+	int "CPU of the MAC thread"
+	range 0 1
+	default 1
+
+config APP_NET_CPU
+	int "CPU for the system threads (-1: not pinned)"
+	range -1 1
+	default 0
+
+config APP_BUILD_PRIORITY
+	int "Frame builder thread priority (runs on APP_NET_CPU)"
+	default 10
+
+config APP_RX2_PRIORITY
+	int "Priority of the second decoder of a pair (runs on APP_NET_CPU)"
+	default 6
+
+config APP_OFDM_BW_KHZ
+	int "OFDM: occupied bandwidth (kHz)"
+	default 26000
+
+config APP_OFDM_CHANNELS
+	int "OFDM: subcarriers"
+	default 84
+
+config APP_OFDM_FS_MHZ
+	int "OFDM: transmit sample rate (MS/s, 80 or 40)"
+	range 40 80
+	default 40
+
+config APP_OFDM_RX_DIV
+	int "OFDM: receive at the transmit rate divided by this (1 or 2, at least 40 MS/s)"
+	range 1 2
+	default 1
+
+config APP_OFDM_ESP_DSP
+	bool "OFDM FFT: the esp-dsp ESP32-S3 kernel (modules/lib/esp-dsp)"
+	default y
+	help
+	  Else the same radix-2 algorithm in C, in IRAM.
+
+config APP_MAC_PRIORITY
+	int "MAC thread priority"
+	default 4
+
+rsource "../common/Kconfig"
+
+# USB device helpers shared with the in-tree USB samples.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

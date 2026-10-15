@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+description: |
+  Antenna switch of the Waveshare ESP32-C5-Zero: an SPDT RF switch between
+  the chip antenna and the U.FL connector, controlled by ANT_Ctrl (GPIO26,
+  200 kOhm pull-down). Active selects the U.FL connector.
+
+compatible: "waveshare,esp32c5-zero-rf-switch"
+
+properties:
+  select-gpios:
+    type: phandle-array
+    required: true
+    description: ANT_Ctrl; active selects the U.FL connector.

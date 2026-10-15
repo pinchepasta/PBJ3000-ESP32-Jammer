@@ -1,0 +1,45 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+
+	/* The apps as files: the FAT volume, block device "FLASH". */
+	fat_disk: fat_disk {
+		compatible = "zephyr,flash-disk";
+		partition = <&fat_partition>;
+		disk-name = "FLASH";
+		cache-size = <4096>;
+	};
+
+	/* stream's USB network function; the host side gets MAC 00:00:5e:00:53:01. */
+	cdc_ncm_eth0: cdc_ncm_eth0 {
+		compatible = "zephyr,cdc-ncm-ethernet";
+		remote-mac-address = "00005E005301";
+	};
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+
+	/* Console, shell and logs while OTG owns the USB port. */
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "ESP-SDR multiapp shell";
+	};
+};
+
+/* The upper half of the 8 MB flash, which the board's 4 MB partition table leaves out. */
+&flash0 {
+	partitions {
+		fat_partition: partition@400000 {
+			compatible = "zephyr,mapped-partition";
+			label = "fat";
+			reg = <0x400000 DT_SIZE_M(4)>;
+		};
+	};
+};

@@ -1,0 +1,26 @@
+sample:
+  name: ESP-SDR radio bench probe
+  description: >-
+    Tune, loop a tone (S3), dump raw captures and analog I2C registers over the
+    shell; tools/rfprobe.py does the analysis on the host
+common:
+  tags: esp-sdr
+  build_only: true
+tests:
+  # Both are driven from the host with tools/rfprobe.py (see README).
+  sample.esp_sdr.rfprobe.c6:
+    platform_allow:
+      - xiao_esp32c6/esp32c6/hpcore
+    integration_platforms:
+      - xiao_esp32c6/esp32c6/hpcore
+  sample.esp_sdr.rfprobe.c5:
+    platform_allow:
+      - waveshare_esp32c5_zero/esp32c5/hpcore
+    integration_platforms:
+      - waveshare_esp32c5_zero/esp32c5/hpcore
+  sample.esp_sdr.rfprobe.s3:
+    sysbuild: true
+    platform_allow:
+      - xiao_esp32s3/esp32s3/procpu
+    integration_platforms:
+      - xiao_esp32s3/esp32s3/procpu

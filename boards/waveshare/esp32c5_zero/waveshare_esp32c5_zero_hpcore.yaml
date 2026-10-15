@@ -1,0 +1,14 @@
+identifier: waveshare_esp32c5_zero/esp32c5/hpcore
+name: Waveshare ESP32-C5-Zero HP Core
+vendor: waveshare
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - entropy
+  - netif:openthread
+  - netif:wifi

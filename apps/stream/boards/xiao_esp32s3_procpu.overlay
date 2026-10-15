@@ -1,0 +1,26 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+
+	/* USB network function; the host side of the link gets MAC 00:00:5e:00:53:01. */
+	cdc_ncm_eth0: cdc_ncm_eth0 {
+		compatible = "zephyr,cdc-ncm-ethernet";
+		remote-mac-address = "00005E005301";
+	};
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+
+	/* Console, shell and logs while OTG owns the USB port. */
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "ESP-SDR shell";
+	};
+};

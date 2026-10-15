@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+west-commands:
+  - file: scripts/west_commands/dfu.py
+    commands:
+      - name: dfu
+        class: Dfu
+        help: update a running esp-sdr board over USB DFU and confirm the image

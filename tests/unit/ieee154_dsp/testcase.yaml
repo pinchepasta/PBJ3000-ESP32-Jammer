@@ -1,0 +1,17 @@
+tests:
+  unit.esp_sdr.ieee154_dsp:
+    tags:
+      - esp-sdr
+      - ieee802154
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    # Without this printk prints floating point conversions as they are written: "%.3f".
+    # The table needs it, and so do the assertion messages.
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+    # The default run takes seconds, the IEEE154_TABLES=1 run (the sweep table) about half a minute
+    # on an idle machine and several times that next to other builds. The timeout only bounds hangs.
+    timeout: 900

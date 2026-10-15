@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "ESP-SDR osmosdr over a serial link"
+
+config APP_FREQ_MHZ
+	int "Centre frequency in MHz at boot"
+	range 100 6000
+	default 2437
+
+source "Kconfig.zephyr"

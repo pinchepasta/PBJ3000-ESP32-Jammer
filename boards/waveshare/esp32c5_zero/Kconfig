@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_WAVESHARE_ESP32C5_ZERO_ESP32C5_HPCORE
+
+config WAVESHARE_ESP32C5_ZERO_EXT_ANTENNA
+	bool "Waveshare ESP32-C5-Zero: U.FL connector instead of the chip antenna"
+	depends on BOARD_WAVESHARE_ESP32C5_ZERO_ESP32C5_HPCORE
+	select BOARD_LATE_INIT_HOOK
+	help
+	  Drives GPIO26 (ANT_Ctrl) high at boot, which switches the RF path
+	  to the U.FL connector. Unset, the pin stays an input and the board's
+	  pull-down keeps the chip antenna.

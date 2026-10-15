@@ -1,0 +1,20 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+
+	/* Console, shell and logs while OTG owns the USB port. */
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "ESP-SDR link shell";
+	};
+};

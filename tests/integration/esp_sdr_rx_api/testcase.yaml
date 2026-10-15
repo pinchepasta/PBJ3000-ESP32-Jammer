@@ -1,0 +1,18 @@
+common:
+  tags:
+    - esp-sdr
+    - hardware
+  harness: ztest
+
+tests:
+  # The C6 flashes directly (no USB OTG/DFU complication on that board).
+  integration.esp_sdr.rx_api.c6:
+    platform_allow:
+      - xiao_esp32c6/esp32c6/hpcore
+
+  # The S3 normally runs an app that owns the USB OTG port, so it needs
+  # MCUboot and its own USB shell to deploy over `west dfu` (see Kconfig).
+  integration.esp_sdr.rx_api.s3:
+    platform_allow:
+      - xiao_esp32s3/esp32s3/procpu
+    sysbuild: true

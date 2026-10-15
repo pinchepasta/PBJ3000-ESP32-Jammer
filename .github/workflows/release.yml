@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# A version tag (v<major>.<minor>.<patch>, as in VERSION) gets a GitHub release with one
+# esptool image for the XIAO ESP32-S3 (MCUboot, multiapp and the FAT volume with every
+# app's file, merged at their flash offsets), the SoapySDR module for osmosdr and
+# Espressif's SVDs with this project's radio registers, notes from release-notes.md.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: esp-sdr-zephyr
+          persist-credentials: false
+
+      - name: Check the tag against VERSION
+        run: |
+          v=v$(sed -n 's/^\(VERSION_MAJOR\|VERSION_MINOR\|PATCHLEVEL\) = //p' esp-sdr-zephyr/VERSION | paste -sd.)
+          if [ "$GITHUB_REF_NAME" != "$v" ]; then
+            echo "::error::tag $GITHUB_REF_NAME, but VERSION says $v"
+            exit 1
+          fi
+
+      - name: Build the SoapySDR module
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libsoapysdr-dev libusb-1.0-0-dev
+          cmake -S esp-sdr-zephyr/apps/osmosdr/soapy -B build-soapy -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-soapy
+          plugin=libEsdrSupport-$GITHUB_REF_NAME-ubuntu24.04-x86_64.so
+          cp build-soapy/libEsdrSupport.so $plugin
+          abi=$(sed -n 's/^#define SOAPY_SDR_ABI_VERSION "\(.*\)"/\1/p' /usr/include/SoapySDR/Version.h)
+          echo "PLUGIN=$plugin" >> "$GITHUB_ENV"
+          echo "SOAPY_ABI=$abi" >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+        with:
+          app-path: esp-sdr-zephyr
+          toolchains: xtensa-espressif_esp32s3_zephyr-elf
+
+      - name: Fetch blobs
+        run: |
+          west blobs fetch hal_espressif
+          west blobs fetch esp-sdr-zephyr
+
+      - name: Build multiapp
+        run: |
+          west build -d build --sysbuild -b xiao_esp32s3/esp32s3/procpu esp-sdr-zephyr/apps/multiapp
+
+      # The same offsets and flash settings as west dfu --esptool. The gaps are 0xff, so the
+      # update slot is erased too.
+      - name: Merge the image
+        run: |
+          image=esp-sdr-multiapp-$GITHUB_REF_NAME-xiao_esp32s3.bin
+          esptool --chip esp32s3 merge-bin -o $image \
+            --flash-mode dio --flash-freq 80m --flash-size 8MB \
+            0x0 build/mcuboot/zephyr/zephyr.bin \
+            0x20000 build/multiapp/zephyr/zephyr.signed.bin \
+            0x400000 build/multiapp/multiapp_fat.img
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+
+      - name: Merge the register SVDs
+        run: |
+          python3 esp-sdr-zephyr/doc/registers/svdmerge.py --out svd
+          for chip in esp32s3 esp32c6; do
+            cp svd/$chip-esp-sdr.svd $chip-esp-sdr-$GITHUB_REF_NAME.svd
+          done
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sed -e "s/@IMAGE@/$IMAGE/g" -e "s/@PLUGIN@/$PLUGIN/g" -e "s/@ABI@/$SOAPY_ABI/g" \
+            -e "s/@TAG@/$GITHUB_REF_NAME/g" \
+            esp-sdr-zephyr/.github/release-notes.md > notes.md
+          gh release create "$GITHUB_REF_NAME" "$IMAGE" "$PLUGIN" *-esp-sdr-$GITHUB_REF_NAME.svd \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" --notes-file notes.md --generate-notes --verify-tag

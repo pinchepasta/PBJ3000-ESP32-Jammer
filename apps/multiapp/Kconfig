@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "multiapp: one firmware that runs the others"
+
+config MULTIAPP_INSTR_HEAP_KB
+	int "Extension code heap in PSRAM, KiB"
+	default 256
+
+config MULTIAPP_DATA_HEAP_KB
+	int "Extension data heap in PSRAM, KiB"
+	default 512
+	help
+	  The extensions' data, read-only data and bss, and llext's metadata.
+
+config MULTIAPP_STACK_SIZE
+	int "Largest stack of an app's main() thread"
+	default 4096
+	help
+	  One stack in PSRAM for every app's main(); an app that asks for more
+	  (multiapp_extension() STACK) is refused.
+
+config MULTIAPP_EMBEDDED
+	bool "Apps built into the image too"
+	default y
+	help
+	  Each app is also built into the image, loaded when the FAT volume has
+	  no good file for it. Without, an app runs only from its file.
+
+config MULTIAPP_FILE_MAX_KB
+	int "Largest app file, KiB"
+	default 192
+	help
+	  The PSRAM buffer a boot reads the app's file into before loading it.
+
+config MULTIAPP_AREA_SIZE
+	int "Bytes of internal RAM the apps share, one per boot"
+	default 24576
+	help
+	  In the high region: the buffers an app defines with
+	  ESP_SDR_HIGH_BUF_DEFINE() and ESP_SDR_HIGH_STACK_DEFINE() (osmosdr's
+	  USB blocks, ring and USB thread stacks), or in other boots the 802.15.4
+	  driver's buffers.
+
+config MULTIAPP_AUTOSTART
+	string "App to start at boot"
+	default ""
+	help
+	  Started when no "app run" request is pending from before a reset.
+	  Empty: none, start one with "app run <name>".
+
+config LLEXT_EXPORT_SYMBOL_GROUP_MULTIAPP
+	def_bool y
+	help
+	  What the embedded extensions import, exported by exports.py. Zephyr's
+	  default groups (every syscall, a libc subset) stay off: what they
+	  export is kept by the linker, kernel code in IRAM included.
+
+# USB shell and DFU.
+rsource "../common/Kconfig"
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

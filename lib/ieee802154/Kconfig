@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+config ESP_SDR_IEEE802154
+	bool "IEEE 802.15.4 radio on esp_sdr"
+	depends on ESP_SDR_TX_DAC && NETWORKING && IEEE802154 && HWINFO
+	help
+	  Software 2.4 GHz O-QPSK PHY and an ieee802154_radio_api driver
+	  (device "esp_sdr_154"): receive gapless through the ring
+	  (ESP_SDR_IEEE802154_RING) or from 16 MS/s bank captures, transmit
+	  through the DAC backend. With CONFIG_NET_L2_IEEE802154 it is a
+	  network interface; without, a plain device whose frames go to
+	  ieee154_esp_sdr_set_rx_cb() (raw 802.15.4 mode would compile out
+	  the interface layer the Wi-Fi driver needs). Waits for ACKs, sends
+	  them with ESP_SDR_IEEE802154_AUTO_ACK; no CCA: see
+	  doc/ieee802154.md. Needs CONFIG_IEEE802154 (packet fields) and
+	  CONFIG_HWINFO (the extended address comes from the chip's id).
+
+if ESP_SDR_IEEE802154
+
+config ESP_SDR_IEEE802154_RING
+	bool "Gapless receive through the ring"
+	default y
+	depends on ESP_SDR_RING && SMP
+	select ESP_SDR_RING_BOX4
+	help
+	  The 16 MS/s ring decimated by 4 (ESP_SDR_RING_DECIM_BOX4) on CPU 1,
+	  the PHY on CPU 0 through a sample ring in internal RAM. Without it, receive
+	  uses separate bank captures of about 1 ms.
+
+config ESP_SDR_IEEE802154_AUTO_ACK
+	bool "Send ACKs"
+	default y
+	depends on ESP_SDR_IEEE802154_RING
+	help
+	  Acknowledge frames to this node that ask for it, from inside the
+	  ring run (doc/ieee802154-ack.md): the ring rotates through two banks,
+	  the third holds the ACK waveform, and the run stops at the end of
+	  such a frame, plays the ACK 192 us after it once the PHY has checked
+	  the FCS, and restarts. Not in promiscuous mode.
+
+config ESP_SDR_IEEE802154_ACK_PRIORITY
+	int "PHY thread priority while an ACK is armed"
+	default 0
+	depends on ESP_SDR_IEEE802154_AUTO_ACK
+	help
+	  From the frame's header to the verdict on its FCS (about 100 us
+	  after its end) the PHY thread runs at this priority, so that no
+	  other thread on CPU 0 delays the ACK.
+
+config ESP_SDR_IEEE802154_HIGH_RAM_APP
+	bool "Internal RAM from the application"
+	help
+	  The driver's buffers and thread stacks (about 22 KiB, otherwise in
+	  the high region) come from ieee154_esp_sdr_high_ram(), which the
+	  application defines, so it can use that RAM otherwise in boots
+	  without the radio (apps/multiapp).
+
+config ESP_SDR_IEEE802154_RX_PRIORITY
+	int "Receive thread priority (ring or burst captures)"
+	default 10
+
+config ESP_SDR_IEEE802154_PHY_PRIORITY
+	int "PHY thread priority with the ring"
+	default 14
+	help
+	  The PHY drains the sample ring whenever samples wait. Keep it below
+	  USB, network and shell threads: if it falls behind it drops samples
+	  instead of starving them.
+
+module = ESP_SDR_IEEE802154
+module-str = esp_sdr_ieee802154
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ESP_SDR_IEEE802154

@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "ESP-SDR osmosdr"
+
+config APP_FREQ_MHZ
+	int "Centre frequency in MHz at boot"
+	range 100 6000
+	default 2450
+
+config APP_RX_BW_MHZ
+	int "Receive filter bandwidth in MHz at boot (0: widest, -1: the PHY's setting)"
+	range -1 69
+	default 13
+	help
+	  Two-sided, 13 to 69 MHz, as in apps/link (1 to 12 fail the build). The ring samples at
+	  16 MS/s: the narrowest setting keeps the most of what lies beyond
+	  +-8 MHz from aliasing into the stream. The host can change it
+	  (SET_BANDWIDTH, where 0 selects the PHY's setting).
+
+config APP_CBW
+	int "PHY channel bandwidth mode (0: 20 MHz, 2: 40 MHz)"
+	range 0 2
+	default 0
+
+config APP_RX_GAIN_MAX
+	int "Largest receive gain index accepted"
+	default 82
+
+config APP_RX_BLOCKS
+	int "Receive blocks of 4 KiB between the ring and USB"
+	default 5
+	help
+	  At 250 kS/s each holds about 8 ms of 8-bit samples, 4 ms of
+	  16-bit ones. USB DMA needs internal RAM. Transmit uses them as
+	  its OUT buffers.
+
+config APP_RX_HIGH_BLOCKS
+	int "Of these, blocks in the SRAM above the capture bank"
+	default 5
+	help
+	  ESP_SDR_HIGH_RAM, about 38 KiB, shared with the ring's filter
+	  buffers, the transmit backend and the app's thread stacks; the rest
+	  go to the DRAM image below the ring banks.
+
+rsource "../common/Kconfig"
+
+# USB device identity (VID, PID, strings) for the sample USB helper.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

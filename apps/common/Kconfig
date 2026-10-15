@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# USB start, DFU and the trial watchdog (common/src/app_usb.c).
+
+config APP_USB_START_DELAY_MS
+	int "Delay before USB OTG takes the PHY from USB-Serial-JTAG"
+	default 0
+	help
+	  Until then the board stays on USB-Serial-JTAG, so esptool can still
+	  reset it into the ROM bootloader with RTS/DTR. Updates normally go
+	  over DFU; a few seconds here give a recovery path for images that
+	  break USB outside of a DFU trial boot.
+
+config APP_USB_DFU
+	bool "USB DFU into the MCUboot secondary slot"
+	default y
+	depends on BOOTLOADER_MCUBOOT
+	select USBD_DFU
+	select FLASH
+	select FLASH_MAP
+	select STREAM_FLASH
+	select IMG_MANAGER
+	select IMG_ERASE_PROGRESSIVELY
+	select REBOOT
+
+if APP_USB_DFU
+
+config USBD_DFU_FLASH
+	default y
+
+config USBD_DFU_FLASH_SLOT0
+	default n
+
+config USBD_DFU_FLASH_SLOT1
+	default y
+
+config APP_USB_DFU_PID
+	hex "USB product ID in DFU mode"
+	default 0xffff
+
+config APP_TRIAL_WATCHDOG
+	bool "Revert a DFU image the host does not confirm"
+	default y
+	select WATCHDOG
+	select MCUBOOT_SHELL
+	help
+	  On a test boot after DFU, arm the hardware watchdog until the image
+	  is confirmed, normally with "mcuboot confirm" on the USB shell. A
+	  hang or a missing confirmation resets the chip; MCUboot reverts.
+
+config APP_TRIAL_TIMEOUT_S
+	int "Seconds the host has to confirm a DFU image"
+	default 60
+	depends on APP_TRIAL_WATCHDOG
+	help
+	  Passed to the watchdog as its timeout. The ESP32 driver currently
+	  counts milliseconds as 0.5 ms ticks, so the reset comes after about
+	  half of this.
+
+endif # APP_USB_DFU
+
+config APP_LIVENESS_WATCHDOG
+	bool "Reset when the system hangs"
+	select WATCHDOG
+	help
+	  Keeps the hardware watchdog armed, fed every 500 ms from the system
+	  work queue: a wedged system resets instead of needing a replug. An
+	  unconfirmed DFU image is fed for about half of
+	  APP_TRIAL_TIMEOUT_S (the driver's tick scale), then reverts as before.
+
+config APP_LIVENESS_TIMEOUT_MS
+	int "Liveness watchdog timeout in ms"
+	default 4000
+	depends on APP_LIVENESS_WATCHDOG
+	help
+	  The ESP32 driver counts milliseconds as 0.5 ms ticks: 4000 resets
+	  after about 2 s without feeding.
+

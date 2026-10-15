@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Builds every app and test for every platform it allows and runs the unit
+# tests, as Zephyr's example application does (doc/testing.md). The integration
+# and regression tests need real boards, which a GitHub runner does not have:
+# here they are only built.
+
+name: Build
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Apps, integration and regression images: build only.
+          - name: Build xiao_esp32s3
+            platforms: -p xiao_esp32s3/esp32s3/procpu
+            toolchains: xtensa-espressif_esp32s3_zephyr-elf
+            twister-args: --build-only
+          - name: Build xiao_esp32c6
+            platforms: -p xiao_esp32c6/esp32c6/hpcore
+            toolchains: riscv64-zephyr-elf
+            twister-args: --build-only
+          - name: Build waveshare_esp32c5_zero
+            platforms: -p waveshare_esp32c5_zero/esp32c5/hpcore
+            toolchains: riscv64-zephyr-elf
+            twister-args: --build-only
+          # Unit tests: built and run on the host. The SDK installs no
+          # cross toolchain for them, only its host tools.
+          - name: Unit tests
+            platforms: -p native_sim -p native_sim/native/64
+            toolchains: ""
+            twister-args: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: esp-sdr-zephyr
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+        with:
+          app-path: esp-sdr-zephyr
+          toolchains: ${{ matrix.toolchains }}
+          ccache-cache-key: ${{ matrix.name }}
+
+      - name: Fetch blobs
+        run: |
+          west blobs fetch hal_espressif
+          west blobs fetch esp-sdr-zephyr
+
+      # NSI_OPT=-O2 as in scripts/run-unit-tests.sh; only native_sim reads it.
+      - name: Twister
+        env:
+          NSI_OPT: -O2
+        run: |
+          west twister -T esp-sdr-zephyr/apps -T esp-sdr-zephyr/tests \
+            ${{ matrix.platforms }} ${{ matrix.twister-args }} \
+            -v --inline-logs
+
+      - name: Upload twister report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: twister ${{ matrix.name }}
+          path: |
+            twister-out/twister.json
+            twister-out/twister.xml
+            twister-out/twister_report.xml
+          if-no-files-found: ignore
+
+  # The host side of apps/osmosdr, as the release builds it.
+  soapy:
+    name: SoapySDR module
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libsoapysdr-dev libusb-1.0-0-dev
+          cmake -S apps/osmosdr/soapy -B build-soapy -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-soapy

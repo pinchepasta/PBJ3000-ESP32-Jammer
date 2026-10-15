@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "LO tuning regression test"
+
+# ESP32-S3 builds: USB shell and DFU (apps/common/), as the apps.
+rsource "../../../apps/common/Kconfig"
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

@@ -1,0 +1,2032 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
+  <name>ESP32S3_RADIO</name>
+  <version>0.1.0</version>
+  <description>Undocumented ESP32-S3 radio registers as esp-sdr-zephyr knows them, additions to Espressif's SVD (github.com/espressif/svd at be20aa1): doc/registers/svdmerge.py merges them, doc/registers/svd2md.py renders doc/undocumented-registers-esp32s3.md. Peripherals in group ANALOG_I2C are analog I2C blocks, not memory-mapped: base address block &lt;&lt; 8, one 8-bit register per offset.</description>
+  <addressUnitBits>8</addressUnitBits>
+  <width>32</width>
+  <size>32</size>
+  <access>read-write</access>
+  <peripherals>
+    <peripheral>
+      <name>DUMP</name>
+      <description>
+        Dump and DAC engine
+        The Wi-Fi MAC's debug dump engine moves raw baseband words between the radio
+        and one 64 KiB SRAM bank (see "SRAM bank ownership"). Its page, 0x60033000,
+        has no name in the HAL. Layout from upstream esp-sdr; the DAC side from
+        librftest's `dactrig()`.
+
+        **Wi-Fi MAC interrupt.** CPU interrupt line 0 (`ETS_WMAC_INUM`,
+        `modules/hal/espressif/components/soc/esp32s3/include/soc/soc.h:212`);
+        `esp_sdr_ring_run()` disables it on its CPU (hardware-quirks.md, "Capture and
+        DAC engine"; `lib/esp_sdr/src/esp_sdr_ring.c:462-491`).
+      </description>
+      <baseAddress>0x60033000</baseAddress>
+      <addressBlock>
+        <offset>0xd5c</offset>
+        <size>0x38</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>CTRL</name>
+          <description>
+            Receive side: run, trigger and count of a capture
+            With neither DUMP_RATE_16M nor DUMP_RATE_40M the engine captures at 80 MS/s (4096
+            samples in 51 to 60 us). One-shot sequence: DUMP_CTRL_REG = 0, DUMP_CONFIG_REG, bank
+            select, `DUMP_RUN | rate | count`, the same with DUMP_TRIGGER, the same without,
+            poll DUMP_DONE, DUMP_CTRL_REG = 0, restore the bank select. The engine can stop
+            early without any error flag (hardware-quirks.md, "Capture and DAC engine").
+            Evidence: `lib/esp_sdr/src/esp_sdr_rx.c:246-326` (sequence),
+            `lib/esp_sdr/src/esp_sdr_rx.c:287-293, 321-323` (early stop)
+          </description>
+          <addressOffset>0xd5c</addressOffset>
+          <fields>
+            <field>
+              <name>RUN</name>
+              <description>
+                Enables the engine.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_rx.c:300-310`
+              </description>
+              <bitRange>[31:31]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>TRIG_SEL</name>
+              <description>
+                The vendor `adctrig()`'s second argument: 0 = software trigger
+                (DUMP_TRIGGER); 5 and 6 make it send frames while it waits. Seen 0.
+                The trigger select could take work off the CPU; lead, not tried.
+                Evidence: *decompile* S3 `mac_common.o`
+                Evidence: *decompile* S3 `libphy.a` (lead)
+              </description>
+              <bitRange>[30:28]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>SRC</name>
+              <description>
+                The vendor's third argument; upstream calls it the source. Seen 0.
+                Evidence: *decompile* S3 `mac_common.o`; *upstream*
+                `modules/lib/esp-sdr/main/targets/esp32s3/receiver.c:164`
+              </description>
+              <bitRange>[27:20]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>TRIGGER</name>
+              <description>
+                Write 1, then 0, to start a one-shot capture.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_rx.c:308-310`
+              </description>
+              <bitRange>[19:19]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>DONE</name>
+              <description>
+                Reads 1 once DUMP_COUNT words are written; the library gives up after 20 ms.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_rx.c:311-314`
+              </description>
+              <bitRange>[18:18]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>CIRCULAR</name>
+              <description>
+                With DUMP_RUN and no trigger, the engine writes continuously round a
+                16384-pair ring (0x00024000 = this bit plus count 16384). In `adctrig()`
+                the same bit skips the final count check.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_ring.c:41-42, 876-881`;
+                *decompile* S3 `mac_common.o`
+              </description>
+              <bitRange>[17:17]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RATE_16M</name>
+              <description>
+                Separate 16 MS/s path: 4096 samples in 256 us. `adctrig()` sets it unless
+                bit 0 of its fourth argument is set.
+                Evidence: *measured* `apps/capture/README.rst:56`; *upstream* (USRP B210)
+                `modules/lib/esp-sdr/main/targets/esp32s3/receiver.c:161-163`; *decompile*
+                S3 `mac_common.o`
+              </description>
+              <bitRange>[16:16]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RATE_40M</name>
+              <description>
+                80 MS/s halved, through the radio's decimation filter (each symbol spread
+                over about +-8 samples, same MER as 80 MS/s): 4096 samples in 102 us.
+                Evidence: *measured* `apps/capture/README.rst:53`, hardware-quirks.md,
+                "Receiving at 40 MS/s"
+              </description>
+              <bitRange>[15:15]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>COUNT</name>
+              <description>
+                Words to capture, 256 to 16380. The library uses bits 13:0 (at most 16380,
+                `ESP_SDR_SAMPLES_MAX`); `adctrig()` writes count + 1 and checks a 15-bit
+                written count, and the ring writes 16384 (bit 14), so the field is probably
+                15 bits wide.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_priv.h:33`; *decompile* S3
+                `mac_common.o`
+              </description>
+              <bitRange>[14:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>WRITE_INDEX</name>
+          <description>
+            Words written by a capture; the live write index in circular mode
+            No read pointer is known for the DAC side; loop playback runs open loop on
+            CCOUNT.
+            Evidence: *measured* `lib/esp_sdr/src/esp_sdr_priv.h:236-244` (no DAC read pointer)
+          </description>
+          <addressOffset>0xd60</addressOffset>
+          <fields>
+            <field>
+              <name>WRITE_INDEX</name>
+              <description>
+                Words written, a 15-bit value: after DUMP_DONE, `adctrig()` compares it with
+                count + 1. In circular mode bits 13:0 are the live write index, mod 16384,
+                advancing whichever bank is selected; the ring times its bank switches on it.
+                Evidence: *decompile* S3 `mac_common.o` (words written)
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_ring.c:40, 116-119`; *upstream*
+                `modules/lib/esp-sdr/main/common/ring_capture.c:112` (circular mode)
+              </description>
+              <bitRange>[14:0]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>DAC_TRIG</name>
+          <description>
+            Transmit side: run, trigger and count of a playback
+            8 bytes above DUMP_CTRL_REG.
+
+            - Writing 0 stops the engine at once (`esp_sdr_dac_halt()`).
+            - In loop mode the DAC clock is exact (CPU stores to other banks do not slow
+              it) and the engine reads whichever bank is selected at the moment, so a bank
+              switch takes effect mid-pass.
+            - The vendor's `dactrig(count, a2, a3, ...)` fills bank 2 (0x3fcd0000) with a
+              ramp, writes count to DUMP_DAC_COUNT and bits 27:20, sets DUMP_DAC_RATE_80M
+              unless a2 is 1, sets DUMP_DAC_TRIGGER (and leaves it set) only if a3 is not 0,
+              sets DUMP_DAC_RUN, polls its own DUMP_DAC_DONE, waits 10 ms and clears
+              DUMP_CTRL_REG (0x60033d5c), not itself. It never writes the bank select. The
+              library skips the ramp so the caller's samples survive, and clears
+              DUMP_CTRL_REG after every transmit session as well.
+            - The front end must be forced to transmit, or only a spur near -6 MHz leaks
+              (FE_FORCE_TXON, see "Front end").
+            Evidence: *measured* `lib/esp_sdr/src/esp_sdr_priv.h:236-244` (loop mode)
+            Evidence: *decompile* S3 `mac_common.o` (`dactrig()`)
+            Evidence: `lib/esp_sdr/src/esp_sdr_tx.c:222-223, 311-312` (the library skips the ramp, clears DUMP_CTRL_REG)
+          </description>
+          <addressOffset>0xd64</addressOffset>
+          <fields>
+            <field>
+              <name>DAC_RUN</name>
+              <description>
+                Run bit; `dactrig()` sets it.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_tx.c:146-156`
+              </description>
+              <bitRange>[31:31]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>B27_20</name>
+              <description>
+                `dactrig()` writes count &amp; 0xff here; no effect on the rate.
+                Evidence: *measured* `lib/esp_sdr/src/esp_sdr_priv.h:46-48`; *decompile* S3
+                `mac_common.o`
+              </description>
+              <bitRange>[27:20]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DAC_TRIGGER</name>
+              <description>
+                Pulsed: one pass. Held: the engine replays the first DUMP_DAC_COUNT words
+                back to back, gapless, until the register is cleared. A retrigger leaves a
+                hole of about 1.35 us.
+                Evidence: *measured* `lib/esp_sdr/src/esp_sdr_tx.c:197-199, 292-302`,
+                `lib/esp_sdr/src/esp_sdr_priv.h:236-244`
+              </description>
+              <bitRange>[19:19]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DAC_DONE</name>
+              <description>
+                Done flag; `dactrig()` polls it.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_tx.c:158-167`
+              </description>
+              <bitRange>[18:18]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>B16</name>
+              <description>
+                No effect on the rate: there is no 16 MS/s DAC rate.
+                Evidence: *measured* `lib/esp_sdr/src/esp_sdr_priv.h:46-48`
+              </description>
+              <bitRange>[16:16]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DAC_RATE_80M</name>
+              <description>
+                The DAC has its own clock: 1 = 80 MS/s, 0 = 40 MS/s. 40 MS/s gives about
+                4 dB less MER.
+                Evidence: *measured* `lib/esp_sdr/src/esp_sdr_priv.h:46-49`, hardware-quirks.md
+              </description>
+              <bitRange>[15:15]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DAC_COUNT</name>
+              <description>
+                Words to play, 256 to 16380.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_tx.c:148-149`
+              </description>
+              <bitRange>[13:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CONFIG</name>
+          <description>
+            Lane selectors: the sources packed into a dump word
+            Four 6-bit lane selectors (lane n in bits 6n+5:6n) choose the internal sources
+            packed into a dump word; 0x000c2040 selects sources 0, 1, 2, 3: receive I/Q.
+            librftest's `mac_init()` writes 0x000c2040 here once; the library writes it
+            before every capture and ring run. The reading as lane selectors is upstream's.
+
+            Only sources 0 to 3 are ever used. The others could take work off the CPU;
+            lead, not tried.
+            Evidence: *working* `lib/esp_sdr/src/esp_sdr_priv.h:34-36`; *upstream*
+            `modules/lib/esp-sdr/main/targets/esp32s3/receiver.c:159` (lane selectors)
+            Evidence: *decompile* S3 `mac_common.o` (`mac_init()`)
+            Evidence: *decompile* S3 `libphy.a` (lead)
+          </description>
+          <addressOffset>0xd90</addressOffset>
+          <fields>
+            <field>
+              <name>RX_AGC</name>
+              <description>
+                Upstream probe flag (`rx_agc`). Seen 0.
+                Evidence: *upstream* `modules/lib/esp-sdr/main/targets/esp32s3/receiver.c:159`
+              </description>
+              <bitRange>[24:24]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>LANE3</name>
+              <description>
+                Source of lane 3; 3 for receive I/Q.
+              </description>
+              <bitRange>[23:18]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>LANE2</name>
+              <description>
+                Source of lane 2; 2 for receive I/Q.
+              </description>
+              <bitRange>[17:12]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>LANE1</name>
+              <description>
+                Source of lane 1; 1 for receive I/Q.
+              </description>
+              <bitRange>[11:6]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>LANE0</name>
+              <description>
+                Source of lane 0; 0 for receive I/Q.
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>SENSITIVE</name>
+      <version>espressif/svd be20aa1</version>
+      <description>
+        SRAM bank ownership
+      </description>
+      <baseAddress>0x600c1000</baseAddress>
+      <addressBlock>
+        <offset>0x1c</offset>
+        <size>0x4</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>INTERNAL_SRAM_USAGE_3</name>
+          <description>
+            Hands SRAM banks to the dump engine
+            The banks by field bit:
+
+            | Bit | Bank | Use in esp_sdr |
+            |---|---|---|
+            | 0 | 0x3fcb0000, 64 KiB | ring (`CONFIG_ESP_SDR_RING`) |
+            | 1 | 0x3fcc0000 | second DAC and capture bank (`CONFIG_ESP_SDR_BANK1`), ring |
+            | 2 | 0x3fcd0000 | capture bank; the one `adctrig()` and `dactrig()` use |
+            | 3 | 0x3fce0000 | never: it holds ROM data |
+
+            The library saves the register and restores it after each use. Undocumented
+            behaviour:
+
+            - While the engine owns a bank the CPUs cannot reach any of it, so nothing else
+              may live there; the linker snippets reserve the banks and lower
+              `_heap_sentry`.
+            - CPU stores reach the DAC only if made while the CPU owns the bank; otherwise
+              the DAC replays the old content.
+            - The engine follows a change of the field while it runs, in both directions:
+              the ring splits one continuous capture into gapless units, the DAC switches
+              banks mid-pass.
+            - Bank 3 holds ROM data (0x3fceffxx); handing it to the engine wedges the
+              board, USB and shell die.
+            Evidence: `lib/esp_sdr/src/esp_sdr_rx.c:246-278`, `lib/esp_sdr/src/esp_sdr.c:123-133`
+            (save and restore)
+            Evidence: `lib/esp_sdr/esp_sdr_bank_ring.ld:4-14` (reserved banks)
+            Evidence: *measured* `lib/esp_sdr/src/esp_sdr_tx.c:392-396` (CPU stores and the DAC)
+            Evidence: *measured* hardware-quirks.md, "Capture and DAC engine";
+            `lib/esp_sdr/src/esp_sdr_priv.h:236-244` (a change while running)
+            Evidence: *measured* bench 2026-10-05, `lib/esp_sdr/esp_sdr_bank.ld`; *upstream*
+            `modules/lib/esp-sdr/main/common/ring_capture.h:26` (bank 3)
+          </description>
+          <addressOffset>0x1c</addressOffset>
+          <fields>
+            <field>
+              <name>INTERNAL_SRAM_MAC_DUMP_USAGE</name>
+              <description>
+                One-hot: bit n hands bank n to the engine, for capture and playback alike;
+                0 gives every bank back to the CPUs. The HAL defines the field without a
+                description.
+                Evidence: `modules/hal/espressif/components/soc/esp32s3/register/soc/sensitive_reg.h:101-107`
+              </description>
+              <bitRange>[3:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>AGC</name>
+      <description>
+        AGC force
+      </description>
+      <baseAddress>0x6001c000</baseAddress>
+      <addressBlock>
+        <offset>0x2c</offset>
+        <size>0x58</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>FORCE</name>
+          <description>
+            Forced receive gain index, force bit and largest calibrated index
+            Upstream calls the register AGCPWR_CTRL7. The PHY's `rom_agc_reg_init()` pulses
+            AGC_FORCE_EN (bit 23) with index 0x32. The ESP32-C6 has the same layout. Levels
+            with a 50 ohm load: AGC -25.7, index 0 -46.0, 40 -39.0, 60 -27.0,
+            82 -19.9 dBFS.
+
+            - `force_rx_gain(force, index, 0)` also calls `bt_rx_force(0)`, which clears
+              AGC_R80_REG bits 7:6 and steps FE_R110_REG bits 9:8 through 2, 3 and 0.
+            - A forced gain is occasionally lost; this register does not show it
+              (hardware-quirks.md, "The forced receive gain gets lost").
+            - A new forced index alone can leave stale receive state, so a gain change
+              reruns the front-end setup.
+            Evidence: *decompile* S3 `phy_reg.o` (`rom_agc_reg_init()`)
+            Evidence: *measured* bench 2026-10-05 (levels)
+            Evidence: *decompile* S3 `phy_test.o` (`bt_rx_force(0)`)
+            Evidence: *upstream* `modules/lib/esp-sdr/main/targets/esp32s3/receiver.c:107-113`;
+            `lib/esp_sdr/src/esp_sdr_rx.c:164-166` (gain change)
+          </description>
+          <addressOffset>0x2c</addressOffset>
+          <fields>
+            <field>
+              <name>FORCE_INDEX</name>
+              <description>
+                Forced receive gain index.
+                Evidence: *decompile* S3 `phy_test.o`; *working*
+              </description>
+              <bitRange>[31:24]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>FORCE_EN</name>
+              <description>
+                Force: 1 holds the index, 0 hands the gain to the AGC.
+                Evidence: *decompile* S3 `phy_test.o`; *working*
+              </description>
+              <bitRange>[23:23]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>GAIN_MAX</name>
+              <description>
+                Largest calibrated gain index, 0 to 82, written by the PHY when it builds
+                the gain table (capped at 82). Larger reads point at uncalibrated slots; the
+                library treats them as 0.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_rx.c:29-34`; *decompile* S3
+                `phy_rx_gain.o`; *upstream* `modules/lib/esp-sdr/main/common/burst_gain.h:1-4, 29-37`
+              </description>
+              <bitRange>[14:8]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R6C</name>
+          <description>
+            AGC RSSI; lead, not tried
+          </description>
+          <addressOffset>0x6c</addressOffset>
+          <fields>
+            <field>
+              <name>RSSI</name>
+              <description>
+                AGC RSSI. With the CCA busy counters (BB_CCA_BUSY_CNT0_REG to
+                BB_CCA_BUSY_CNT2_REG) a candidate for 802.15.4 energy detection and CCA,
+                work it could take off the CPU; lead, not tried.
+                Evidence: *decompile* S3 `libphy.a`
+              </description>
+              <bitRange>[15:8]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R80</name>
+          <description>
+            Unknown; bits 7:6 cleared by `bt_rx_force(0)`
+          </description>
+          <addressOffset>0x80</addressOffset>
+          <fields>
+            <field>
+              <name>B7_6</name>
+              <description>
+                Cleared by `bt_rx_force(0)`, which `force_rx_gain(force, index, 0)` calls
+                (see AGC_FORCE_REG).
+                Evidence: *decompile* S3 `phy_test.o`
+              </description>
+              <bitRange>[7:6]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>FE</name>
+      <description>
+        Front end
+        The FE block, `DR_REG_FE_BASE` 0x60006000: the HAL has the base, no registers.
+      </description>
+      <baseAddress>0x60006000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x178</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>TX_CTRL</name>
+          <description>
+            Force TX on and the TX gain memory index
+            The library calls `force_txon_mode(1, 0, 0)` and `force_tx_gain()`, which writes
+            gain memory slot 0. That this is the slot the front end then uses holds only
+            while FE_BASE_INDEX reads 0; the code does not check it.
+            Evidence: `lib/esp_sdr/src/esp_sdr_priv.h:164-169` (slot 0)
+          </description>
+          <addressOffset>0x0</addressOffset>
+          <fields>
+            <field>
+              <name>BASE_INDEX</name>
+              <description>
+                Base index, read by `force_txon_mode()` and by the tone generator.
+                Evidence: *decompile*
+              </description>
+              <bitRange>[25:18]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>TX_GAIN_INDEX</name>
+              <description>
+                TX gain memory index (inferred). `force_txon_mode(en, mode, ofs)` writes
+                `(ofs + (mode ? 16 : 0) + bits[25:18]) &amp; 0xff`; the tone generator writes
+                `bits[25:18] + 9`.
+                Evidence: *decompile* S3 `phy_test.o`, `phy_feature.o`
+              </description>
+              <bitRange>[17:10]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>FORCE_TXON</name>
+              <description>
+                Force TX on. Without a frame in flight the MAC never enables the
+                transmitter; `force_txon_mode(1, ...)` sets the bit, `(0, ...)` clears it,
+                the vendor tone generator does the same. Without it only a spur near -6 MHz
+                leaks; with it a tone stands 35 to 37 dB over the TX-off noise.
+                Evidence: *measured* bench 2026-10-05; *working*
+                `lib/esp_sdr/src/esp_sdr_tx.c:84-87`, `lib/esp_sdr/src/esp_sdr_rx.c:84-86`;
+                *decompile* S3 `phy_test.o`, `phy_feature.o`
+              </description>
+              <bitRange>[1:1]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R100</name>
+          <description>
+            Unknown; bits 18:16 listed by upstream's filter probe
+          </description>
+          <addressOffset>0x100</addressOffset>
+          <fields>
+            <field>
+              <name>B18_16</name>
+              <description>
+                Unknown; listed by upstream's filter probe. Could not be written from the
+                shell (`devmem`).
+                Evidence: *measured* bench 2026-10-06; *speculative*
+                `modules/lib/esp-sdr/main/diagnostics/filter_probe.h:19-20`
+              </description>
+              <bitRange>[18:16]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R110</name>
+          <description>
+            Unknown; written by `force_txon_mode()` and `bt_rx_force(0)`
+          </description>
+          <addressOffset>0x110</addressOffset>
+          <fields>
+            <field>
+              <name>B13_12</name>
+              <description>
+                3 when `force_txon_mode()`'s mode is not 0, else 0.
+                Evidence: *decompile* S3 `phy_test.o`
+              </description>
+              <bitRange>[13:12]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>B9_8</name>
+              <description>
+                Stepped 0x200, 0x300, 0 (2, 3 and 0 in the field) by `bt_rx_force(0)`,
+                which `force_rx_gain(force, index, 0)` calls (see AGC_FORCE_REG).
+                Evidence: *decompile* S3 `phy_test.o`
+              </description>
+              <bitRange>[9:8]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>IQ_EST_CONF0</name>
+          <description>
+            IQ estimator configuration; lead, not tried
+            The vendor's `ram_iq_est_enable()` configures the IQ estimator in
+            FE_IQ_EST_CONF0_REG and FE_IQ_EST_CONF1_REG (count up to 0x7fff); its done flag
+            is FE_IQ_EST_DONE. It gives power, DC and a quadrature correlation against the
+            transmit tone generator, work it could take off the CPU.
+            Evidence: *decompile* S3 `libphy.a`
+          </description>
+          <addressOffset>0x140</addressOffset>
+        </register>
+        <register>
+          <name>IQ_EST_CONF1</name>
+          <description>
+            IQ estimator configuration; lead, not tried
+            Configured together with FE_IQ_EST_CONF0_REG; see there.
+            Evidence: *decompile* S3 `libphy.a`
+          </description>
+          <addressOffset>0x144</addressOffset>
+        </register>
+        <register>
+          <name>R174</name>
+          <description>
+            IQ estimator done flag; lead, not tried
+          </description>
+          <addressOffset>0x174</addressOffset>
+          <fields>
+            <field>
+              <name>IQ_EST_DONE</name>
+              <description>
+                Done flag of the IQ estimator (see FE_IQ_EST_CONF0_REG).
+                Evidence: *decompile* S3 `libphy.a`
+              </description>
+              <bitRange>[16:16]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>BB</name>
+      <version>espressif/svd be20aa1</version>
+      <description>
+        Baseband
+        Leads, none tried: a spur notch and CCA busy counters that could take work off
+        the CPU.
+      </description>
+      <baseAddress>0x6001d000</baseAddress>
+      <addressBlock>
+        <offset>0x14</offset>
+        <size>0x50</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>SPUR_NOTCH0</name>
+          <description>
+            Spur notch; lead, not tried
+            The spur notch is at BB_SPUR_NOTCH0_REG and BB_SPUR_NOTCH1_REG.
+            Evidence: *decompile* S3 `libphy.a`
+          </description>
+          <addressOffset>0x14</addressOffset>
+        </register>
+        <register>
+          <name>SPUR_NOTCH1</name>
+          <description>
+            Spur notch; lead, not tried
+            See BB_SPUR_NOTCH0_REG.
+            Evidence: *decompile* S3 `libphy.a`
+          </description>
+          <addressOffset>0x18</addressOffset>
+        </register>
+        <register>
+          <dim>3</dim>
+          <dimIncrement>0x4</dimIncrement>
+          <dimIndex>0,1,2</dimIndex>
+          <name>CCA_BUSY_CNT%s</name>
+          <description>
+            CCA busy counters; lead, not tried
+            With AGC_RSSI, candidates for 802.15.4 energy detection and CCA.
+            Evidence: *decompile* S3 `libphy.a`
+          </description>
+          <addressOffset>0x58</addressOffset>
+          <access>read-only</access>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>RTC_CNTL</name>
+      <version>espressif/svd be20aa1</version>
+      <description>
+        USB PHY select
+      </description>
+      <baseAddress>0x60008000</baseAddress>
+      <addressBlock>
+        <offset>0x120</offset>
+        <size>0x4</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>USB_CONF</name>
+          <description>
+            USB PHY select; documented, descriptions empty
+            Other bits: documented 18:0
+            The OTG driver sets both fields and they survive a software reset; the
+            consequence is in hardware-quirks.md, "Building and flashing".
+            Evidence: `modules/hal/espressif/components/soc/esp32s3/register/soc/rtc_cntl_reg.h:3071-3083`;
+            mapping in `modules/hal/espressif/components/esp_hal_usb/esp32s3/include/hal/usb_wrap_ll.h:55-66`
+            Evidence: *measured*, bench 2026-10-09 (survive a software reset)
+          </description>
+          <addressOffset>0x120</addressOffset>
+          <fields>
+            <field>
+              <name>SW_HW_USB_PHY_SEL</name>
+              <description>
+                1: software drives the USB PHY mux.
+              </description>
+              <bitRange>[20:20]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>SW_USB_PHY_SEL</name>
+              <description>
+                1: internal PHY to USB OTG. 0: to USB-Serial-JTAG.
+              </description>
+              <bitRange>[19:19]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>I2C_ANA_MST</name>
+      <description>
+        Analog I2C master
+        Base 0x6000e000. The HAL defines only 0x6000e040 (`I2C_MST_ANA_CONF0_REG`), bits
+        17 and 18 of 0x6000e044 (`ANA_CONFIG_REG`) and bit 16 of 0x6000e048
+        (`ANA_CONFIG2_REG`)
+        (`modules/hal/espressif/components/soc/esp32s3/include/soc/regi2c_defs.h:12-26`).
+        The names I2C0_CTRL and I2C1_CTRL are the ESP32-C6 HAL's for its command
+        registers.
+
+        **Frequency hop engine** (*speculative* field meanings, *decompile* flow). The S3
+        PHY can tune Wi-Fi channels with a hardware I2C sequencer in this block instead of
+        a software calibration. `set_channel_rfpll_freq()` takes this path when
+        `phy_param + 0x120` bit 5 is set, which `get_rf_freq_init()` does at PHY init
+        after filling an 85-entry table (2400 to 2484 MHz, capacitor codes interpolated
+        between calibrations at 2400 and 2464 MHz); otherwise it calls
+        `set_rf_freq_offset()`. So `set_chanfreq()` on a channel frequency probably loads a
+        table entry without a fresh VCO calibration (S3 `phy_rfpll.o`, `phy_hw_freq.o`).
+        Its registers are I2C_ANA_MST_HOP_CTRL_REG, I2C_ANA_MST_R130_REG,
+        I2C_ANA_MST_HOP_WDATA_REG, I2C_ANA_MST_R150_REG and I2C_ANA_MST_R170_REG.
+      </description>
+      <baseAddress>0x6000e000</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>0x174</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <dim>2</dim>
+          <dimIncrement>4</dimIncrement>
+          <dimIndex>0,1</dimIndex>
+          <name>I2C%s_CTRL</name>
+          <description>
+            Command word, master 0 (I2C0) and master 1 (I2C1)
+            One command word per access, then poll I2C_ANA_MST_BUSY: block, register and
+            bit 26 for a read (0x04000000 base), plus data and I2C_ANA_MST_WRITE for a
+            write (0x05000000 base). The result is in bits 23:16.
+            Evidence: *decompile* S3 ROM `rom_chip_i2c_readReg_org` (0x400354fc),
+            `rom_chip_i2c_writeReg`; S3 `phy_i2c.o`
+          </description>
+          <addressOffset>0x0</addressOffset>
+          <fields>
+            <field>
+              <name>B26</name>
+              <description>
+                Unknown; always set.
+              </description>
+              <bitRange>[26:26]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BUSY</name>
+              <description>
+                Busy, polled after each command.
+              </description>
+              <bitRange>[25:25]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>WRITE</name>
+              <description>
+                Set for a write.
+              </description>
+              <bitRange>[24:24]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DATA</name>
+              <description>
+                Data to write, or the read result.
+              </description>
+              <bitRange>[23:16]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>REG_ADDR</name>
+              <description>
+                Register.
+              </description>
+              <bitRange>[15:8]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BLOCK</name>
+              <description>
+                Block.
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>ANA_CONFIG</name>
+          <description>
+            Readback enable, one bit per block
+            The HAL's `ANA_CONFIG_REG`. Before a read the ROM writes the inverse of the
+            block's bit (clear = readback enabled).
+            Evidence: *decompile* ROM table at 0x3ff193dc (`rom_get_i2c_read_mask`),
+            `rom_chip_i2c_readReg_org`
+          </description>
+          <addressOffset>0x44</addressOffset>
+          <fields>
+            <field>
+              <name>ULP</name>
+              <description>
+                Block 0x61 (`i2c_ulp`); clear = readback enabled.
+              </description>
+              <bitRange>[22:22]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>SAR</name>
+              <description>
+                Block 0x69 (`i2c_sar`); clear = readback enabled.
+              </description>
+              <bitRange>[18:18]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BBPLL</name>
+              <description>
+                Block 0x66 (`i2c_bbpll`); clear = readback enabled.
+              </description>
+              <bitRange>[17:17]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>CKGEN</name>
+              <description>
+                Block 0x65 (`i2c_ckgen`); clear = readback enabled.
+              </description>
+              <bitRange>[16:16]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BLK68</name>
+              <description>
+                Block 0x68; clear = readback enabled.
+              </description>
+              <bitRange>[15:15]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DIG</name>
+              <description>
+                Block 0x6d (`i2c_dig_reg`); clear = readback enabled.
+              </description>
+              <bitRange>[14:14]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BIAS</name>
+              <description>
+                Block 0x6a (`i2c_bias`); clear = readback enabled.
+              </description>
+              <bitRange>[13:13]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>TXRF</name>
+              <description>
+                Block 0x6b (`i2c_txrf`); clear = readback enabled.
+              </description>
+              <bitRange>[12:12]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RFPLL</name>
+              <description>
+                Block 0x62 (`i2c_rfpll`); clear = readback enabled.
+              </description>
+              <bitRange>[11:11]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BBTOP</name>
+              <description>
+                Block 0x67 (`i2c_bbtop`); clear = readback enabled.
+              </description>
+              <bitRange>[10:10]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RFPLL_SDM</name>
+              <description>
+                Block 0x63 (`i2c_rfpll_sdm`); clear = readback enabled.
+              </description>
+              <bitRange>[9:9]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RFRX</name>
+              <description>
+                Block 0x64 (`i2c_rfrx`); clear = readback enabled.
+              </description>
+              <bitRange>[8:8]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>ANA_CONFIG2</name>
+          <description>
+            Master select, one bit per block
+            The HAL's `ANA_CONFIG2_REG`. Bits 16:4 hold one master bit per block: set =
+            master 0, clear = master 1. The ROM's `get_i2c_hostid()` writes bits 16:4 from
+            0x1ff40 (0x62 to 0x64 on master 1), libphy's from 0x1fe00 (0x62, 0x63, 0x64,
+            0x67, 0x6b), on every access.
+            Evidence: *decompile* ROM table at 0x3ff193a8 (`rom_get_i2c_mst0_mask`),
+            `rom_get_i2c_hostid` (0x400354bc); S3 `phy_i2c.o`
+          </description>
+          <addressOffset>0x48</addressOffset>
+          <fields>
+            <field>
+              <name>SAR</name>
+              <description>
+                Block 0x69 (`i2c_sar`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[16:16]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>ULP</name>
+              <description>
+                Block 0x61 (`i2c_ulp`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[15:15]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BBPLL</name>
+              <description>
+                Block 0x66 (`i2c_bbpll`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[14:14]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>CKGEN</name>
+              <description>
+                Block 0x65 (`i2c_ckgen`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[13:13]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BLK68</name>
+              <description>
+                Block 0x68; 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[11:11]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>DIG</name>
+              <description>
+                Block 0x6d (`i2c_dig_reg`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[10:10]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BIAS</name>
+              <description>
+                Block 0x6a (`i2c_bias`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[9:9]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>TXRF</name>
+              <description>
+                Block 0x6b (`i2c_txrf`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[8:8]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RFPLL</name>
+              <description>
+                Block 0x62 (`i2c_rfpll`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[7:7]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>BBTOP</name>
+              <description>
+                Block 0x67 (`i2c_bbtop`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[6:6]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RFPLL_SDM</name>
+              <description>
+                Block 0x63 (`i2c_rfpll_sdm`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[5:5]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>RFRX</name>
+              <description>
+                Block 0x64 (`i2c_rfrx`); 1 = master 0, 0 = master 1.
+              </description>
+              <bitRange>[4:4]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>HOP_CTRL</name>
+          <description>
+            Frequency hop engine control (speculative)
+            Evidence: *speculative* field meanings, *decompile* flow
+          </description>
+          <addressOffset>0xc4</addressOffset>
+          <fields>
+            <field>
+              <name>HOP_OFF</name>
+              <description>
+                1 = hardware frequency setting off (`phy_dis_hw_set_freq()`).
+              </description>
+              <bitRange>[25:25]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>HOP_EN</name>
+              <description>
+                Enable, set at init.
+              </description>
+              <bitRange>[24:24]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>HOP_PARAM1</name>
+              <description>
+                Init parameter, 4 at init.
+              </description>
+              <bitRange>[23:20]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>HOP_PARAM0</name>
+              <description>
+                Init parameter, 2 at init.
+              </description>
+              <bitRange>[19:16]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>HOP_MEM_WR</name>
+              <description>
+                Table memory write strobe.
+              </description>
+              <bitRange>[9:9]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>HOP_START</name>
+              <description>
+                Start pulse.
+              </description>
+              <bitRange>[8:8]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>HOP_MEM_ADDR</name>
+              <description>
+                Table memory address (entry x 3 + word for writes).
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R130</name>
+          <description>
+            Frequency hop engine module reset (speculative)
+            Evidence: *speculative* field meanings, *decompile* flow
+          </description>
+          <addressOffset>0x130</addressOffset>
+          <fields>
+            <field>
+              <name>HOP_RST_N</name>
+              <description>
+                Module reset, active low.
+              </description>
+              <bitRange>[17:17]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>HOP_WDATA</name>
+          <description>
+            Frequency hop engine table write data (speculative)
+            Evidence: *speculative* field meanings, *decompile* flow
+          </description>
+          <addressOffset>0x148</addressOffset>
+          <fields>
+            <field>
+              <name>HOP_WDATA</name>
+              <description>
+                Table write data: word 0 = `0x62:1` + (`0x62:2` image &lt;&lt; 8), word 1 = the
+                block 0x63 bytes.
+              </description>
+              <bitRange>[31:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R150</name>
+          <description>
+            Frequency hop engine channel index (speculative)
+            Evidence: *speculative* field meanings, *decompile* flow
+          </description>
+          <addressOffset>0x150</addressOffset>
+          <fields>
+            <field>
+              <name>HOP_CHAN</name>
+              <description>
+                Channel index (MHz - 2400).
+              </description>
+              <bitRange>[27:20]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R170</name>
+          <description>
+            Frequency hop engine current channel (speculative)
+            Evidence: *speculative* field meanings, *decompile* flow
+          </description>
+          <addressOffset>0x170</addressOffset>
+          <fields>
+            <field>
+              <name>HOP_CUR_CHAN</name>
+              <description>
+                Current channel, read back.
+              </description>
+              <bitRange>[23:17]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>ULP</name>
+      <description>
+        Analog I2C block 0x61 (ULP)
+        One bit of this block takes part in the RC calibration of block 0x6a.
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6100</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>9</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>R8</name>
+          <description>
+            Bit 2 set during the RC time-constant measurement
+          </description>
+          <addressOffset>8</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R8_B2</name>
+              <description>
+                Set for the RC time-constant measurement in `get_rc_dout()`, cleared after
+                (see block 0x6a).
+                Evidence: *decompile* S3 `phy_analog_cal.o`
+              </description>
+              <bitRange>[2:2]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>RFPLL</name>
+      <description>
+        Analog I2C block 0x62 (RF PLL)
+        The RF PLL's VCO and its calibration. The library reads RFPLL_VCO_WINDOW after
+        every tune. The capacitor code is `0x62:5 | 0x62:7[2] &lt;&lt; 8` (9 bits; the vendor
+        clamps to 0x1ff); a higher code means a lower VCO frequency.
+
+        - After `set_rf_freq_offset()` the code is a manual one: `rfpll_cap_init_cal()`
+          tries about 10 codes on either side of the calibrated one and keeps the average
+          of those that read in-window (*decompile* S3 `phy_rfpll.o`).
+        - The Wi-Fi PHY's temperature tracking (`rfpll_cap_track()`, after a change of 10
+          temperature units by default) reruns `rfpll_cap_correct()`, so the code can move
+          after a tune (*decompile* S3 `phy_track.o`).
+        - Upstream esp-sdr does a manual 512-code search on the ESP32-S2 through the same
+          fields (`0x62:1`, `0x62:2[4]`, `0x62:11[6]`, `0x62:0[7]`, and `0x62:12[3:2]` as
+          the window indication); it does not apply it to the S3 or the C6 (*upstream*
+          `modules/lib/esp-sdr/main/targets/esp32s2/pll.h:8-36`).
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6200</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>13</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>R0</name>
+          <description>
+            VCO calibration start
+            Init: 0xa8, written by the vendor's PHY init
+
+            `restart_cal()` starts the VCO calibration with a rising edge on bit 5 while
+            bit 6 is toggled: it sets bit 6, pulses bit 5, clears bit 6. Bit 6 and the
+            other bits: unknown.
+            Evidence: *decompile* S3 `phy_rfpll.o`, S3 `phy_i2c.o`
+          </description>
+          <addressOffset>0</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R0_B6</name>
+              <description>
+                Unknown; set around the pulse on RFPLL_CAL_START.
+              </description>
+              <bitRange>[6:6]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>CAL_START</name>
+              <description>
+                Calibration start: a rising edge starts the VCO calibration.
+              </description>
+              <bitRange>[5:5]</bitRange>
+              <access>write-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R1</name>
+          <description>
+            Manual capacitor code, bits 7:0
+          </description>
+          <addressOffset>1</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>MANUAL_CODE</name>
+              <description>
+                `write_pll_cap()` writes the code here (`rf_test` prints it as `ir_cap_ext`).
+                After a tune it holds the low byte of the code in use: 127 with code 383,
+                208 at 2412 MHz.
+                Evidence: *decompile* S3 `phy_rfpll.o`, `rf_test.o`; *measured* bench
+                2026-10-09
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R2</name>
+          <description>
+            4-bit code override and manual capacitor code bit 8
+            Init: 0x88, written by the vendor's PHY init
+
+            `get_rf_freq_init()` clears RFPLL_CODE4_OVR, calibrates at 2437 MHz, copies
+            RFPLL_CODE4_CAL into RFPLL_CODE4_VAL and sets RFPLL_CODE4_OVR. What the 4-bit
+            code controls is unknown.
+            Evidence: *decompile* S3 `phy_hw_freq.o`, `phy_i2c.o`
+          </description>
+          <addressOffset>2</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>CODE4_OVR</name>
+              <description>
+                4-bit code override: cleared before and set after the copy into
+                RFPLL_CODE4_VAL.
+              </description>
+              <bitRange>[7:7]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>MANUAL_CODE_B8</name>
+              <description>
+                Manual capacitor code, bit 8. Written with RFPLL_MANUAL_CODE.
+                Evidence: *decompile* S3 `phy_rfpll.o`
+              </description>
+              <bitRange>[4:4]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>CODE4_VAL</name>
+              <description>
+                The 4-bit code, copied from RFPLL_CODE4_CAL.
+              </description>
+              <bitRange>[3:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R5</name>
+          <description>
+            Capacitor code readback, bits 7:0
+          </description>
+          <addressOffset>5</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>CAP_CODE</name>
+              <description>
+                Capacitor code readback, bits 7:0. Values: see "Measured PLL behaviour".
+                Evidence: *decompile* S3 `phy_rfpll.o`; *measured*
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R6</name>
+          <description>
+            Calibrated 4-bit code
+          </description>
+          <addressOffset>6</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>CODE4_CAL</name>
+              <description>
+                Copied into RFPLL_CODE4_VAL by the vendor.
+                Evidence: *decompile* S3 `phy_hw_freq.o`, `phy_i2c.o` (as RFPLL_R2)
+              </description>
+              <bitRange>[3:0]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R7</name>
+          <description>
+            Capacitor code bit 8 and calibration done
+          </description>
+          <addressOffset>7</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>CAP_CODE_B8</name>
+              <description>
+                Capacitor code readback, bit 8.
+                Evidence: *decompile* S3 `phy_rfpll.o`; *measured*
+              </description>
+              <bitRange>[2:2]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>CAL_DONE</name>
+              <description>
+                Calibration done; 1 after every tune. `wait_rfpll_cal_end()` polls it every
+                20 us, 100 times, then prints `error: pll_cal exceeds 2ms!!!`.
+                Evidence: *decompile* S3 `phy_rfpll.o`; *measured*
+              </description>
+              <bitRange>[1:1]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>R7_B0</name>
+              <description>
+                Unknown; 1 in every read (RFPLL_R7 = 0x03 or 0x07).
+                Evidence: *measured* bench 2026-10-09
+              </description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R11</name>
+          <description>
+            Capacitor code source
+            Init: 0x48, written by the vendor's PHY init
+          </description>
+          <addressOffset>11</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>CODE_SRC</name>
+              <description>
+                Cleared before each software calibration (`set_rfpll_freq()`), set by
+                `rfpll_cap_init_cal()` before it tries manual codes. Inferred: 0 = code from
+                the calibration engine, 1 = code from RFPLL_MANUAL_CODE and
+                RFPLL_MANUAL_CODE_B8.
+                Evidence: *decompile* S3 `phy_rfpll.o`
+              </description>
+              <bitRange>[6:6]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R12</name>
+          <description>
+            VCO window comparator and two unknown status bits
+            Init: 0x00, read at 2412 MHz (see "Measured PLL behaviour")
+          </description>
+          <addressOffset>12</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>VCO_WINDOW</name>
+              <description>
+                After calibration: 0 = the VCO inside its tuning window; 1 = target below
+                the window (code pinned at its maximum); 2 = target above it (code 0). Live
+                for the current code: the vendor's `rfpll_cap_correct()` moves the code in
+                steps of 2, up while it reads 1 and down while it reads 2.
+                `esp_sdr_set_freq()` and `esp_sdr_set_freq_offset()` return -ERANGE when it
+                is not 0. Window (PLL): 2193 to 2781 MHz.
+                Evidence: *measured* bench 2026-10-09; *working*
+                `lib/esp_sdr/src/esp_sdr.c:78-97, 194-196, 213-215`; *decompile* S3
+                `phy_rfpll.o`
+              </description>
+              <bitRange>[3:2]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>R12_B1</name>
+              <description>
+                Unknown; set from about 2700 MHz (PLL) up.
+                Evidence: *measured* bench 2026-10-09
+              </description>
+              <bitRange>[1:1]</bitRange>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>R12_B0</name>
+              <description>
+                Unknown; always 0.
+                Evidence: *measured* bench 2026-10-09
+              </description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>RFPLL_SDM</name>
+      <description>
+        Analog I2C block 0x63 (RF PLL fractional-N divider)
+        The S3 sets the PLL frequency through registers 0 and 3 to 5:
+
+        `f_PLL = 0.75 * f_xtal * (32 + r3 + r4 / 2^8 + r5 / 2^16)`
+
+        With the 40 MHz crystal that is 30 MHz per integer step and about 458 Hz per
+        LSB. `write_rfpll_sdm()` writes reg 0 = 0x07, regs 3 to 5, then reg 0 = 0x17
+        (bit 4 presumably loads the word).
+
+        | PLL MHz | reg 3 | reg 4 | reg 5 | Decoded |
+        |---|---|---|---|---|
+        | 2412 | 0x30 | 0x66 | 0x66 | 30 MHz x 80.4 |
+        | 2500 | 0x33 | 0x55 | 0x55 | 30 MHz x 83.33 |
+        | 2700 | 0x3a | 0x00 | 0x00 | 30 MHz x 90 |
+
+        Evidence: *decompile* S3 `phy_rfpll.o` (`rfpll_set_freq()`), S3 `phy_rfpll.o`
+        (`write_rfpll_sdm()`); *measured* bench 2026-10-09: the raw values match the
+        formula exactly.
+
+        The crystal selector of the vendor calls picks the divisor, as on the C6: 1 =
+        26 MHz, 2 = 32 MHz, anything else = 40 MHz (*decompile* S3 `phy_rfpll.o`).
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6300</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>6</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>R0</name>
+          <description>
+            Divider word load (presumed)
+          </description>
+          <addressOffset>0</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>LOAD</name>
+              <description>
+                Presumably loads the word: `write_rfpll_sdm()` writes the register as 0x07
+                before registers 3 to 5 and as 0x17 after them.
+                Evidence: *decompile* S3 `phy_rfpll.o` (`write_rfpll_sdm()`)
+              </description>
+              <bitRange>[4:4]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R3</name>
+          <description>
+            Integer part above 32
+          </description>
+          <addressOffset>3</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>INTEGER</name>
+              <description>
+                `r3` in the formula above: 30 MHz per step with the 40 MHz crystal.
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R4</name>
+          <description>
+            Fraction, high byte
+          </description>
+          <addressOffset>4</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>FRAC_H</name>
+              <description>
+                `r4` in the formula above, weight 1 / 2^8.
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R5</name>
+          <description>
+            Fraction, low byte
+          </description>
+          <addressOffset>5</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>FRAC_L</name>
+              <description>
+                `r5` in the formula above, weight 1 / 2^16: about 458 Hz per LSB with the
+                40 MHz crystal.
+              </description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>CKGEN</name>
+      <description>
+        Analog I2C block 0x65 (clock generator, LO 5/6 divider)
+        Register 0 bit 4 (mask 0x10) selects the LO 5/6 divider. The ESP32-C6 has no
+        block 0x65; its selector is in block 0x62.
+
+        - The S3 libphy and librftest objects only read block 0x65 in their debug dump
+          (*decompile* S3 `phy_debug.o`).
+        - Upstream qualifies the selector on the ESP32, S2, S3, C2, C3 and C6 and warns
+          that the C5, C61, H2 and S31 lay out their analog blocks differently
+          (`modules/lib/esp-sdr/docs/rx-controls.md:102-107`).
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6500</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>9</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>R0</name>
+          <description>
+            LO 5/6 divider select
+
+            - Change only the bit (read-modify-write). Clear it before the vendor tuning
+              call, which calibrates in normal mode; set it after the receive or transmit
+              front-end setup.
+            - Without the select on the transmit side, transmissions in the divider band
+              went out at 6/5 of the target.
+            - The library uses the divider for every frequency below 2210 MHz (PLL at 1.2
+              times the LO), upstream only from 1842 MHz.
+
+            Evidence: *working* `lib/esp_sdr/src/esp_sdr.c:106-108`,
+            `lib/esp_sdr/src/esp_sdr_rx.c:92-95`, `lib/esp_sdr/src/esp_sdr_tx.c:25-26, 77-83`
+            (read-modify-write and order)
+            Evidence: *measured* bench 2026-10-09 (6/5 of the target on transmit)
+            Evidence: `lib/esp_sdr/src/esp_sdr.c:65-76`,
+            `modules/lib/esp-sdr/main/common/rx_lo.h:15-19` (divider band)
+          </description>
+          <addressOffset>0</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>LO_DIV</name>
+              <description>
+                0: the LO is the PLL. 1: LO = PLL / 1.2 (5/6 conversion). One selector feeds
+                both the receive and the transmit mixer.
+                Evidence: *upstream* `modules/lib/esp-sdr/main/common/rx_lo.h:47-62`,
+                external-tone tests `modules/lib/esp-sdr/docs/rx-controls.md:76-100`;
+                *measured* on air for receive and transmit (bench 2026-10-09)
+              </description>
+              <bitRange>[4:4]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>BBPLL</name>
+      <description>
+        Analog I2C block 0x66 (BBPLL)
+        Documented by the HAL. Upstream's never-released `SAMPLE_RATE_PROBE` builds write
+        `0x66:4[3:2]` (`I2C_BBPLL_DIV_ADC`) around a capture to look for other ADC rates
+        and record no result (*upstream*
+        `modules/lib/esp-sdr/main/targets/esp32s3/receiver.c:140-155`). esp_sdr does not
+        touch the block.
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6600</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>11</size>
+        <usage>registers</usage>
+      </addressBlock>
+    </peripheral>
+    <peripheral>
+      <name>BBTOP</name>
+      <description>
+        Analog I2C block 0x67 (BBTOP, analog baseband)
+        esp_sdr writes the receive and transmit filter codes here.
+
+        - BBTOP_R4 and BBTOP_R6 both reading 0x10 is the vendor's sign that BBTOP lost
+          its state; it then reruns its init (*decompile* S3 `phy_i2c.o`).
+        - Writing the other pairs (0x06/0x07 up to 0x1e/0x1f) disturbed reception until a
+          reboot (*measured* bench 2026-10-06). `esp_sdr_bbtop_read()` and
+          `esp_sdr_bbtop_write()` give unchecked access
+          (`lib/esp_sdr/src/esp_sdr_rx.c:648-667`).
+        - The PHY's channel bandwidth mode changes these filters too (hardware-quirks.md,
+          "40 MHz mode widens the analog filters").
+
+        Registers 0x24 to 0x38 (36 to 56) take init constants, bits 7:0 (*decompile* S3
+        `phy_i2c.o`):
+
+        | Registers | Value |
+        |---|---|
+        | 0x24, 0x28 | 0x48 |
+        | 0x25, 0x29 | 0x08 |
+        | 0x2c, 0x2d, 0x30, 0x31 | 0x88 |
+        | 0x34, 0x35 | 0x11 |
+        | 0x38 | 0xff |
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6700</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>57</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>R2</name>
+          <description>
+            Unknown 2-bit field, 1 at init
+            `phy_close_rf()` writes the register as 6.
+            Evidence: *decompile* S3 `phy_i2c.o`, `phy_init.o`
+          </description>
+          <addressOffset>2</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R2_B3_2</name>
+              <description>
+                Unknown; 1 at init.
+              </description>
+              <bitRange>[3:2]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R3</name>
+          <description>
+            Unknown bit, changed by the receive calibration
+            The S3 frequency hop engine (see "Analog I2C master") writes the register as
+            0xf0 and 0xf4.
+            Evidence: *speculative* S3 `phy_rx_cal.o`, `phy_hw_freq.o`
+          </description>
+          <addressOffset>3</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R3_B2</name>
+              <description>
+                Unknown; saved, changed and restored by the receive calibration.
+              </description>
+              <bitRange>[2:2]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>2</dim>
+          <dimIncrement>1</dimIncrement>
+          <dimIndex>4,5</dimIndex>
+          <name>R%s</name>
+          <description>
+            Receive low-pass capacitor code, I (BBTOP_R4) and Q (BBTOP_R5)
+            Vendor scaling: the corner goes as 1 / (code + 8). `phy_rx_band_set(1, bw)`
+            writes `clamp((base + 8) * 19 / min(bw, 19) - 8, 2, 60)` to both; `base` comes
+            from the RC calibration (block 0x6a).
+            Evidence: *decompile* S3 `phy_api.o` (vendor scaling)
+          </description>
+          <addressOffset>4</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>RX_LPF</name>
+              <description>
+                Receive low-pass capacitor code, 0 to 63. Larger is narrower; 0 is the widest
+                setting, not a bypass: about 69 MHz (0) to 13 MHz (60) two-sided, PHY default
+                about 22 MHz. Bits 7:6 are kept.
+                Evidence: *working* `lib/esp_sdr/src/esp_sdr_rx.c:126-148`; *upstream* curves
+                `modules/lib/esp-sdr/main/common/rx_bandwidth.h:79-84`; *measured* (S3
+                default) bench 2026-10-05
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>2</dim>
+          <dimIncrement>1</dimIncrement>
+          <dimIndex>6,7</dimIndex>
+          <name>R%s</name>
+          <description>
+            Second capacitor pair, unknown
+            Probably a second receive stage. Written at init and, with BBTOP_R14 and
+            BBTOP_R15 (0x0e, 0x0f), for 10 and 5 MHz channels. The library leaves it alone.
+            Evidence: *speculative*; *decompile* S3 `phy_i2c.o`, `phy_feature.o`
+          </description>
+          <addressOffset>6</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>CAP2</name>
+              <description>
+                Capacitor code, unknown.
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>2</dim>
+          <dimIncrement>1</dimIncrement>
+          <dimIndex>12,13</dimIndex>
+          <name>R%s</name>
+          <description>
+            Transmit low-pass pair A (0x0c, 0x0d)
+          </description>
+          <addressOffset>12</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>TX_LPF_A</name>
+              <description>
+                Transmit low-pass code, pair A. 63 narrows TX to about +-6 MHz; codes below
+                the calibrated one (about 35) do not widen it.
+                Evidence: *measured* bench 2026-10-06; *decompile* S3 `rf_test.o`
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>2</dim>
+          <dimIncrement>1</dimIncrement>
+          <dimIndex>14,15</dimIndex>
+          <name>R%s</name>
+          <description>
+            Transmit low-pass pair B (0x0e, 0x0f)
+          </description>
+          <addressOffset>14</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>TX_LPF_B</name>
+              <description>
+                Transmit low-pass code, pair B.
+                Evidence: *decompile* S3 `rf_test.o`; *working*
+                `lib/esp_sdr/src/esp_sdr_rx.c:578-637`
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>4</dim>
+          <dimIncrement>1</dimIncrement>
+          <dimIndex>20,21,22,23</dimIndex>
+          <name>R%s</name>
+          <description>
+            Unknown pairs (0x14 to 0x17), written from PHY parameters at init
+            Evidence: *speculative* S3 `phy_i2c.o`
+          </description>
+          <addressOffset>20</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>B5_0</name>
+              <description>
+                Unknown.
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>4</dim>
+          <dimIncrement>1</dimIncrement>
+          <dimIndex>28,29,30,31</dimIndex>
+          <name>R%s</name>
+          <description>
+            Unknown pairs (0x1c to 0x1f), written from PHY parameters at init
+            Stepped with BBTOP_R12 and BBTOP_R13 (0x0c, 0x0d) in a TX DC calibration test.
+            Evidence: *speculative* S3 `phy_i2c.o`, `phy_test.o`
+          </description>
+          <addressOffset>28</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>B5_0</name>
+              <description>
+                Unknown.
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+    <peripheral>
+      <name>BIAS</name>
+      <description>
+        Analog I2C block 0x6a (bias): RC calibration
+        Not used by esp_sdr. `get_rc_dout(mode)` measures an on-chip RC time constant: it
+        writes `0x6a:2[6:5]` = 2, `0x6a:6[4:0]` = 2, `0x6a:4[7:4]` = 7, 11 or 6 by mode,
+        `0x61:8[2]` = 1 and `0x6a:4[0]` = 1, pulses `0x6a:4[3]`, waits 100 us, reads
+        `0x6a:5[5:0]` and clears `0x61:8[2]` and `0x6a:4[0]`. `rc_cal()` turns the result
+        into the receive filter base code, `clamp((dout + 56) * 82 / 190 - 8, 2, 63)`, so
+        the filter codes follow process spread. Evidence: *decompile* S3
+        `phy_analog_cal.o`.
+      </description>
+      <groupName>ANALOG_I2C</groupName>
+      <baseAddress>0x6a00</baseAddress>
+      <addressBlock>
+        <offset>0</offset>
+        <size>8</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>R2</name>
+          <description>
+            RC measurement setting in bits 6:5
+            Evidence: *decompile* S3 `phy_analog_cal.o`
+          </description>
+          <addressOffset>2</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R2_B6_5</name>
+              <description>
+                Unknown; `get_rc_dout()` writes 2.
+              </description>
+              <bitRange>[6:5]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R4</name>
+          <description>
+            RC measurement mode and control bits
+            Evidence: *decompile* S3 `phy_analog_cal.o`
+          </description>
+          <addressOffset>4</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R4_B7_4</name>
+              <description>
+                `get_rc_dout(mode)` writes 7, 11 or 6 by mode.
+              </description>
+              <bitRange>[7:4]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>R4_B3</name>
+              <description>
+                Pulsed by `get_rc_dout()`, which then waits 100 us and reads BIAS_RC_DOUT.
+              </description>
+              <bitRange>[3:3]</bitRange>
+              <access>write-only</access>
+            </field>
+            <field>
+              <name>R4_B0</name>
+              <description>
+                Set by `get_rc_dout()` before the pulse on BIAS_R4_B3, cleared after the
+                read.
+              </description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R5</name>
+          <description>
+            RC measurement result
+            Evidence: *decompile* S3 `phy_analog_cal.o`
+          </description>
+          <addressOffset>5</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>RC_DOUT</name>
+              <description>
+                The RC time-constant measurement, read by `get_rc_dout()` 100 us after the
+                pulse on BIAS_R4_B3; `rc_cal()` turns it into the receive filter base code.
+              </description>
+              <bitRange>[5:0]</bitRange>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R6</name>
+          <description>
+            RC measurement setting in bits 4:0
+            Evidence: *decompile* S3 `phy_analog_cal.o`
+          </description>
+          <addressOffset>6</addressOffset>
+          <size>8</size>
+          <fields>
+            <field>
+              <name>R6_B4_0</name>
+              <description>
+                Unknown; `get_rc_dout()` writes 2.
+              </description>
+              <bitRange>[4:0]</bitRange>
+              <access>read-write</access>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+  </peripherals>
+</device>

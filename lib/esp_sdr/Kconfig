@@ -1,0 +1,155 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+config ESP_SDR
+	bool "ESP-SDR raw I/Q receiver"
+	depends on SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C5
+	depends on WIFI_ESP32
+	# The bank and heap limits assume no APPCPU image in SRAM.
+	depends on !SOC_ENABLE_APPCPU
+	help
+	  Burst capture of raw baseband I/Q samples from the Wi-Fi receiver,
+	  ported from ESPARGOS esp-sdr. Reserves an SRAM bank for the capture
+	  engine (64 KiB on the S3, the 128 KiB block 2 on the C6). The ESP32-C6 captures at 80 MS/s only, and
+	  streams continuously, CPU-paced (ESP_SDR_PACED). The ESP32-C5 receives at 80 to 4 MS/s
+	  into its 128 KiB block 1, which splits the image around it; no
+	  transmit or ring support.
+
+if ESP_SDR
+
+config ESP_SDR_RFTEST
+	bool "Espressif RF test library (fixed RX gain, TX power steps)"
+	default y
+	help
+	  Links force_rx_gain(), force_tx_gain() and force_txon_mode() from
+	  Espressif's librftest.a, fetched with "west blobs fetch
+	  esp-sdr-zephyr". Without it the receiver runs on the hardware AGC
+	  only and transmit keeps the PHY's own power setting.
+
+config ESP_SDR_RX_DECIM
+	bool "Decimated capture"
+	default y
+	help
+	  esp_sdr_rx_capture_decimated(): a full capture filtered and
+	  decimated by a third order CIC, for narrow band streams.
+	  esp_sdr_rx_capture_folded(): the same capture folded (decimated in
+	  frequency, aliasing the whole band down) instead of filtered, for a
+	  wideband power/occupancy survey. Apps that work at the native rate
+	  can leave it out.
+
+config ESP_SDR_PACED
+	bool "CPU-paced streaming (ESP32-C6, ESP32-C5)"
+	default y
+	depends on (SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C5) && ESP_SDR_RFTEST
+	help
+	  esp_sdr_rx_paced_*() and esp_sdr_tx_paced_*(): continuous receive
+	  through the modem's IQ estimator and continuous transmit through the
+	  TX DC value register, paced by the CPU from the caller's loop.
+
+config ESP_SDR_BANK1
+	bool "Reserve a second dump bank"
+	depends on SOC_SERIES_ESP32S3
+	help
+	  Reserves SRAM bank 1 (0x3fcc0000) next to the capture bank, for
+	  two-bank loop playback (esp_sdr_tx_loop_*()) and for captures into
+	  either bank (esp_sdr_rx_capture_bank()). Costs another 64 KiB of
+	  internal RAM.
+
+config ESP_SDR_RING
+	bool "Continuous ring receive"
+	depends on SOC_SERIES_ESP32S3
+	select ESP_SDR_BANK1
+	help
+	  esp_sdr_ring_run(): the dump engine in circular mode, rotated
+	  through SRAM banks 0 to 2, and a two-stage decimating FIR on the
+	  vector unit: gapless I/Q at 16 MS/s divided by 64 to 1024. Reserves
+	  SRAM bank 0 (0x3fcb0000) besides banks 1 and 2, another 64 KiB of
+	  internal RAM: the whole DRAM image must end below 0x3fcb0000.
+
+config ESP_SDR_RING_BOX4
+	bool "Ring decimation by 4 (boxcar, for 2 MHz wide signals)"
+	depends on ESP_SDR_RING
+	help
+	  ESP_SDR_RING_DECIM_BOX4: -fs/4 mix and a boxcar of 4 (or every 4th
+	  pair) instead of the FIR chain, for signals such as IEEE 802.15.4 at
+	  4 MS/s. About 1 KiB of IRAM, which on the S3 comes out of the same
+	  SRAM as the DRAM image: leave it out where that is tight.
+
+config ESP_SDR_TX
+	bool "Transmit backend interface"
+	depends on SOC_SERIES_ESP32S3
+	help
+	  esp_sdr_tx_*() front end with a stub backend that consumes and
+	  counts samples. A real backend registers with
+	  esp_sdr_tx_set_backend().
+
+config ESP_SDR_TX_DAC
+	bool "DAC transmit backend"
+	default y
+	depends on ESP_SDR_TX && ESP_SPIRAM && ESP_SDR_RFTEST
+	select ESP_SDR_BANK1
+	help
+	  Default backend: buffers input samples in PSRAM and interpolates
+	  them to the 40 MS/s DAC rate in a player thread.
+
+if ESP_SDR_TX_DAC
+
+config ESP_SDR_TX_DAC_RING_SAMPLES
+	int "Input ring size in samples (PSRAM, 4 bytes each, power of two)"
+	default 262144
+
+config ESP_SDR_TX_DAC_PREBUF_MS
+	int "Input buffered before playback starts, in ms"
+	default 20
+
+config ESP_SDR_TX_DAC_SIMD
+	bool "Interpolate with the ESP32-S3 vector unit"
+	default y
+	help
+	  Four DAC words per instruction group (src/esp_sdr_pie.S). The
+	  vector registers are not saved by Zephyr, so only the filler
+	  threads may use them, with the scheduler locked meanwhile.
+
+config ESP_SDR_TX_DAC_HIGH_RAM
+	bool "Backend buffers and thread stacks above the capture bank"
+	help
+	  Puts the input staging buffer and the player and filler stacks
+	  (about 7 KiB) in ESP_SDR_HIGH_RAM instead of the DRAM image, for
+	  apps whose image must end below the ring banks.
+
+config ESP_SDR_TX_DAC_STACK_SIZE
+	int "Player and filler thread stack size"
+	default 2048
+
+config ESP_SDR_TX_DAC_PRIORITY
+	int "Player thread priority"
+	default 8
+	help
+	  Below the network and transmit receive threads, above the fillers:
+	  it only copies ready blocks and restarts the DAC.
+
+config ESP_SDR_TX_DAC_FILLER_PRIORITY
+	int "Filler thread priority"
+	default 5
+	help
+	  The leader fills one block per bank pass and sleeps until its switch
+	  time, so it can sit above the application threads: any thread that
+	  preempts it on its CPU for longer than the block tail (51 us) makes
+	  the DAC restart.
+
+config ESP_SDR_TX_DAC_LEADER_CPU
+	int "CPU of the leading filler"
+	range 0 1
+	default 1
+	help
+	  The leader fills every block when the vector unit is available, the
+	  other filler only helps the C fallback. Put the leader on the CPU
+	  that is idle while transmitting: a transmit session holds the radio,
+	  so receive capture waits and its processing CPU is free.
+
+endif # ESP_SDR_TX_DAC
+
+module = ESP_SDR
+module-str = esp_sdr
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ESP_SDR

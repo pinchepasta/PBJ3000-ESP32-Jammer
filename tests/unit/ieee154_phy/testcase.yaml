@@ -1,0 +1,15 @@
+tests:
+  unit.esp_sdr.ieee154_phy:
+    # The opt-in table (IEEE154_TABLES) takes longer than twister's default 60 s.
+    timeout: 300
+    # The table and the assert messages print floats; without this printk shows the format text.
+    extra_configs:
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+    tags:
+      - esp-sdr
+      - ieee802154
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim

@@ -1,0 +1,149 @@
+ESP-SDR on Zephyr
+=================
+
+A software defined radio on the ESP32-S3 Wi-Fi radio for Zephyr: I/Q
+capture from the receiver, I/Q playback through the transmit DAC. Ported
+from `ESPARGOS esp-sdr <https://github.com/ESPARGOS/esp-sdr>`__ and
+extended; a west manifest repository and Zephyr module laid out like
+`example-application <https://github.com/zephyrproject-rtos/example-application>`__.
+
+Contents
+--------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 85
+
+   * - Path
+     - What
+   * - ``lib/``
+     - - ``esp_sdr``: the library (``CONFIG_ESP_SDR``)
+       - ``ieee802154``: software O-QPSK PHY and Zephyr radio driver
+         (`doc/ieee802154.md <doc/ieee802154.md>`__)
+   * - ``include/``
+     - ``esp_sdr/``: the API, ``esp_sdr.h``, ``esp_sdr_rx.h``,
+       ``esp_sdr_tx.h``, ``esp_sdr_ring.h``, ``esp_sdr_paced.h``,
+       ``ieee154_phy.h``, ``ieee154_esp_sdr.h``
+   * - ``apps/``
+     - - ``capture``: capture survey on the console
+       - ``stream``: VITA 49.2 RX and TX over USB (CDC-NCM)
+       - ``osmosdr``: HackRF-style USB SDR for GNU Radio and gqrx
+       - ``osmosdr_serial``: the same over USB-Serial-JTAG (C6, C5)
+       - ``link``: QAM or OFDM packet link
+       - ``wpan``: 802.15.4 test shell
+       - ``rfprobe``: bench probe (tuning, tones, registers)
+       - ``multiapp``: one firmware that runs the others
+         (`doc/multiapp.md <doc/multiapp.md>`__)
+       - ``common``: USB with DFU, watchdogs, crash records
+   * - ``tests/``
+     - ``unit`` (host), ``integration`` (one board), ``regression`` (two
+       boards); see `doc/testing.md <doc/testing.md>`__
+   * - ``doc/``
+     - Guides, register pages, the Doxygen and Sphinx build
+   * - ``scripts/``
+     - ``west dfu`` (``west_commands/``), test runners
+   * - ``boards/``
+     - ``waveshare/esp32c5_zero``: Waveshare ESP32-C5-Zero
+   * - ``zephyr/``
+     - ``module.yml`` and the ``librftest.a`` blobs
+   * - ``west.yml``
+     - The workspace pins (see `Dependencies`_)
+
+Getting started
+---------------
+
+::
+
+   west init -m https://github.com/cyber-murmel/esp-sdr-zephyr esp-sdr-ws
+   cd esp-sdr-ws
+   west update
+   west blobs fetch hal_espressif
+   west blobs fetch esp-sdr-zephyr
+   west build -d build --sysbuild -b xiao_esp32s3/esp32s3/procpu esp-sdr-zephyr/apps/multiapp
+   west flash -d build
+   west dfu --storage -d build
+
+This puts multiapp on a XIAO ESP32S3. On its USB shell ``app list``
+shows the apps and ``app run <name>`` starts one, for example
+``app run osmosdr`` (`apps/multiapp/README.rst <apps/multiapp/README.rst>`__).
+Each app also builds on its own. Releases carry the multiapp image and
+the SoapySDR module for gqrx and GNU Radio.
+
+The library
+-----------
+
+- **Chips:** ESP32-S3 (XIAO ESP32S3), SMP or single core. ESP32-C6
+  (XIAO ESP32C6) and ESP32-C5 (C5-Zero): burst captures, and continuous
+  CPU-paced receive and transmit up to 250 kS/s (``esp_sdr_paced.h``);
+  ``capture``, ``rfprobe``, ``wpan`` (C6) and ``osmosdr_serial`` run on
+  them.
+- **Tuning:** 100 to 6000 MHz in the API, but the PLL locks over a
+  chip-specific range (about 1.8 to 2.8 GHz on the S3); below 2210 MHz
+  through the 5/6 divider. ``-ERANGE`` when the VCO is out of range.
+- **Capture:** 256 to 16380 samples at 80, 40 or 16 MS/s, analog
+  low-pass filter, optional CIC decimation; gapless ring receive.
+- **Gain:** AGC or a fixed index; the fixed gain and TX power steps use
+  ``librftest.a`` (``west blobs fetch esp-sdr-zephyr``, or
+  ``CONFIG_ESP_SDR_RFTEST=n``).
+- **Transmit:** sample playback at 40 or 80 MS/s, gapless streaming at
+  40 MS/s / n (``CONFIG_ESP_SDR_TX_DAC``, needs PSRAM), 18 power steps.
+
+Chip details and quirks: `doc/hardware-quirks.md <doc/hardware-quirks.md>`__.
+Enable it with:
+
+::
+
+   CONFIG_NETWORKING=y
+   CONFIG_WIFI=y
+   CONFIG_ESP32_WIFI_STA_POWER_SAVE_NONE=y
+   CONFIG_ESP_SDR=y
+
+``esp_sdr_init()`` takes over the radio the Wi-Fi driver brought up; do
+not scan, connect or start an access point while using it.
+
+Documentation
+-------------
+
+Published at https://cyber-murmel.github.io/esp-sdr-zephyr. To build it
+yourself:
+
+::
+
+   cd esp-sdr-zephyr/doc
+   doxygen
+   make html
+
+The site is in ``doc/_build_sphinx/html``, with the API reference in its
+``doxygen/`` folder. CI builds it with warnings as errors
+(``SPHINXOPTS=-W``) and publishes it.
+
+Versioning
+----------
+
+``VERSION`` (Zephyr's format) versions the library and the apps; each
+app prints it at boot. Major for breaking API changes, minor for
+compatible extensions, patch for fixes. A tag ``v<VERSION>`` makes a
+GitHub release.
+
+Dependencies
+------------
+
+``west.yml`` pins:
+
+- `Zephyr esp-sdr-multiapp <https://github.com/cyber-murmel/zephyr/tree/esp-sdr-multiapp>`__:
+  ESP32-S3 SMP (zephyrproject-rtos/zephyr#120082), CDC-NCM aggregation,
+  llext and Xtensa changes for multiapp
+- `hal_espressif esp-sdr <https://github.com/cyber-murmel/hal_espressif/tree/esp-sdr>`__:
+  the HAL side of the SMP port
+- `libvrt esp-sdr <https://github.com/cyber-murmel/libvrt/tree/esp-sdr>`__:
+  VITA 49.2
+- `esp-sdr <https://github.com/ESPARGOS/esp-sdr>`__ (upstream,
+  unmodified): receiver helper headers
+- `esp-dsp <https://github.com/espressif/esp-dsp>`__: the FFT for
+  ``apps/link`` OFDM
+
+License
+-------
+
+GPL-3.0-or-later, like upstream esp-sdr; images that enable the library
+are subject to the GPL.

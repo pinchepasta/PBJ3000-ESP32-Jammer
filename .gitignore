@@ -1,0 +1,6 @@
+# Fetched by "west blobs fetch esp-sdr-zephyr".
+zephyr/blobs/lib/
+build*/
+twister-out/
+__pycache__/
+/doc/_build*/

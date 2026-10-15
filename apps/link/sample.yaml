@@ -1,0 +1,16 @@
+sample:
+  name: ESP-SDR link
+  description: >-
+    QAM link at the native 80 MS/s with Reed-Solomon coding, a CSMA/CA MAC
+    and an iperf style throughput test on the USB shell
+common:
+  tags: esp-sdr
+  sysbuild: true
+  platform_allow:
+    - xiao_esp32s3/esp32s3/procpu
+  integration_platforms:
+    - xiao_esp32s3/esp32s3/procpu
+tests:
+  # Two boards and a cabled link: run tools/link_perf.py (see README).
+  sample.esp_sdr.link:
+    build_only: true

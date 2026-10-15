@@ -1,0 +1,31 @@
+# Hardware map of the boards on the desk, for the two-board regression tests
+# (scripts/run-regression-tests.sh, doc/testing.md). For another desk change the
+# serial numbers: `ls /dev/serial/by-id` shows them.
+#
+# id: what scripts/twister-flash.py gets as --board-id. The C6's is the serial number of
+#     its USB-Serial-JTAG, the S3's the USB serial number of the esp-sdr firmware.
+# product, runner: required by twister's schema, unused here: the flash command, not a west
+#     runner, puts the images on the boards.
+# flash_before: connect to the console only after the flash. The C6 resets when its port is
+#     opened, and the S3's port goes away and comes back during the DFU update.
+# serial: the S3's is the link scripts/twister-flash.py points at its port after flashing:
+#     each scenario puts its own image with its own USB product string on the S3, which
+#     changes its /dev/serial/by-id name.
+
+- id: 98:A3:16:8E:29:9C
+  platform: xiao_esp32c6/esp32c6/hpcore
+  product: USB JTAG/serial debug unit
+  runner: esp32
+  serial: /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_98:A3:16:8E:29:9C-if00
+  connected: true
+  flash_before: true
+  flash_timeout: 120
+
+- id: A4CB8FD1C700
+  platform: xiao_esp32s3/esp32s3/procpu
+  product: ESP-SDR
+  runner: esp32
+  serial: /tmp/esp-sdr-tty/A4CB8FD1C700
+  connected: true
+  flash_before: true
+  flash_timeout: 300

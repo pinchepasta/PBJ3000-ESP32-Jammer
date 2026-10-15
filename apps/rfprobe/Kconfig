@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+mainmenu "rfprobe: radio bench probe"
+
+# ESP32-S3 builds: USB shell and DFU (common/), as the other apps.
+rsource "../common/Kconfig"
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

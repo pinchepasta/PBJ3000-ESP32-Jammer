@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+rsource "esp_sdr/Kconfig"
+rsource "ieee802154/Kconfig"

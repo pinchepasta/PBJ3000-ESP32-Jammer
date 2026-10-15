@@ -1,0 +1,49 @@
+tests:
+  # Two-board regression test (pytest/test_interop.py): a real C6 and a real S3
+  # exchanging apps/wpan's test frames, both ways. Needs both boards in a
+  # hardware map: scripts/run-regression-tests.sh runs it with
+  # tests/regression/hardware-map.yaml (see doc/testing.md). Twister flashes
+  # and resets both, so the two per-board ids below exist only to be built
+  # (build_only), and are referenced by id from the scenario id.
+  regression.esp_sdr.ieee802154_link.c6:
+    tags:
+      - esp-sdr
+      - hardware
+      - regression
+    platform_allow:
+      - xiao_esp32c6/esp32c6/hpcore
+    build_only: true
+
+  regression.esp_sdr.ieee802154_link.s3:
+    tags:
+      - esp-sdr
+      - hardware
+      - regression
+    platform_allow:
+      - xiao_esp32s3/esp32s3/procpu
+    sysbuild: true
+    build_only: true
+
+  regression.esp_sdr.ieee802154_link:
+    tags:
+      - esp-sdr
+      - hardware
+      - regression
+    platform_allow:
+      - xiao_esp32c6/esp32c6/hpcore
+    harness: pytest
+    # Flashing both boards (the S3 over DFU takes about a minute) happens inside the
+    # pytest run, so it counts against this timeout.
+    timeout: 900
+    harness_config:
+      pytest_root:
+        - "pytest/test_interop.py"
+      # Flash and connect once for all tests; the module-scoped radios_on fixture
+      # needs the shells to live as long.
+      pytest_dut_scope: module
+      required_devices:
+        - platform: xiao_esp32s3/esp32s3/procpu
+          application: regression.esp_sdr.ieee802154_link.s3
+    build: false
+    required_applications:
+      - application: regression.esp_sdr.ieee802154_link.c6

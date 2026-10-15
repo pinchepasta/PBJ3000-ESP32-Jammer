@@ -1,0 +1,15 @@
+sample:
+  name: wpan
+  description: >-
+    802.15.4 frame generator and receiver on any Zephyr 802.15.4 radio in raw
+    mode, to compare the esp-sdr software radio with a native one
+common:
+  tags: esp-sdr
+  platform_allow:
+    - xiao_esp32c6/esp32c6/hpcore
+  integration_platforms:
+    - xiao_esp32c6/esp32c6/hpcore
+tests:
+  # Two radios on one channel: see README.
+  sample.esp_sdr.wpan:
+    build_only: true

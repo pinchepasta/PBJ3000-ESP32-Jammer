@@ -1,0 +1,34 @@
+name: esp-sdr-zephyr
+build:
+  cmake: .
+  kconfig: Kconfig
+  settings:
+    # boards/waveshare/esp32c5_zero
+    board_root: .
+samples:
+  - apps
+blobs:
+  - path: lib/esp32s3/librftest.a
+    sha256: d3e3b808dd21f62c94841c4fffc0e33b6a04a0c0e5357b9a6e8675a1cd107324
+    type: lib
+    version: '1.0'
+    license-path: zephyr/blobs/license.txt
+    url: https://github.com/espressif/esp-phy-lib/raw/e37ecdc9c1e93fefda5b1a99f09bd979046d0720/esp32s3/librftest.a
+    description: "Espressif RF test library: manual RX gain (same esp-phy-lib commit as the hal libphy)"
+    doc-url: https://github.com/espressif/esp-phy-lib
+  - path: lib/esp32c6/librftest.a
+    sha256: ad390d9ad3ec2a6b9dad2602b32f66bf3e22f25da54dcd879a467a725c6f1d0f
+    type: lib
+    version: '1.0'
+    license-path: zephyr/blobs/license.txt
+    url: https://github.com/espressif/esp-phy-lib/raw/e37ecdc9c1e93fefda5b1a99f09bd979046d0720/esp32c6/librftest.a
+    description: "Espressif RF test library: manual RX gain (same esp-phy-lib commit as the hal libphy)"
+    doc-url: https://github.com/espressif/esp-phy-lib
+  - path: lib/esp32c5/librftest.a
+    sha256: 0f9680b41612762d854accf2334412e3e01b206a3ec290bbbb232842fdaec7ba
+    type: lib
+    version: '1.0'
+    license-path: zephyr/blobs/license.txt
+    url: https://github.com/espressif/esp-phy-lib/raw/e37ecdc9c1e93fefda5b1a99f09bd979046d0720/esp32c5/librftest.a
+    description: "Espressif RF test library: manual RX gain (same esp-phy-lib commit as the hal libphy)"
+    doc-url: https://github.com/espressif/esp-phy-lib

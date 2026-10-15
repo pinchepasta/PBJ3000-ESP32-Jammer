@@ -1,0 +1,26 @@
+sample:
+  name: ESP-SDR multiapp
+  description: >-
+    One firmware that runs the other apps as loadable extensions
+    (doc/multiapp.md): capture, rfprobe, wpan, stream, osmosdr and link,
+    loaded from files on a FAT volume, with built-in copies
+common:
+  tags: esp-sdr
+  sysbuild: true
+  platform_allow:
+    - xiao_esp32s3/esp32s3/procpu
+  integration_platforms:
+    - xiao_esp32s3/esp32s3/procpu
+tests:
+  # The console is on USB CDC-ACM; "app run <name>" there (see README).
+  sample.esp_sdr.multiapp:
+    build_only: true
+  # On the desk with the boards attached (pytest/test_multiapp.py): the image and
+  # its FAT volume (scripts/twister-flash.py), booting into hello from its file.
+  sample.esp_sdr.multiapp.hil:
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: module
+    extra_args:
+      - multiapp_EXTRA_CONF_FILE=hil.conf
+    timeout: 600

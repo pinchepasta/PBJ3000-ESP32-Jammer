@@ -1,0 +1,52 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+/**
+ * @defgroup esp_sdr ESP-SDR library
+ * @brief Raw I/Q receive and transmit on the Wi-Fi radio (CONFIG_ESP_SDR).
+ *
+ * One user of the radio at a time; all calls may sleep. The ESP32-S3 has the
+ * whole library, the ESP32-C6 burst capture at 80 MS/s.
+ */
+
+/**
+ * @defgroup esp_sdr_radio Radio
+ * @ingroup esp_sdr
+ * @brief Bring-up, tuning, front end turnaround and housekeeping (esp_sdr.h).
+ */
+
+/**
+ * @defgroup esp_sdr_rx Receive
+ * @ingroup esp_sdr
+ * @brief Gain, analog low-pass filter, burst and decimated capture (esp_sdr_rx.h).
+ */
+
+/**
+ * @defgroup esp_sdr_tx Transmit
+ * @ingroup esp_sdr
+ * @brief Power steps, one-shot and loop playback, sweeps and streaming (esp_sdr_tx.h).
+ */
+
+/**
+ * @defgroup esp_sdr_ring Continuous receive
+ * @ingroup esp_sdr
+ * @brief The gapless ring through three dump banks, ESP32-S3 (esp_sdr_ring.h).
+ */
+
+/**
+ * @defgroup ieee154 IEEE 802.15.4
+ * @brief Software O-QPSK PHY and the esp_sdr radio driver (CONFIG_ESP_SDR_IEEE802154).
+ */
+
+/**
+ * @defgroup ieee154_phy Software PHY
+ * @ingroup ieee154
+ * @brief Modulator and receiver, portable C (ieee154_phy.h).
+ */
+
+/**
+ * @defgroup ieee154_esp_sdr Radio driver diagnostics
+ * @ingroup ieee154
+ * @brief Counters, measurements and traces of the esp_sdr_154 device (ieee154_esp_sdr.h).
+ */
