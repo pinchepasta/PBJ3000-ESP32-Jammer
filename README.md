@@ -38,47 +38,6 @@ Show it in action!
 Contents
 --------
 
-.. list-table::
-   :header-rows: 1
-   :widths: 15 85
-
-   * - Path
-     - What
-   * - ``lib/``
-     - - ``esp_sdr``: the library (``CONFIG_ESP_SDR``)
-       - ``ieee802154``: software O-QPSK PHY and Zephyr radio driver
-         (`doc/ieee802154.md <doc/ieee802154.md>`__)
-   * - ``include/``
-     - ``esp_sdr/``: the API, ``esp_sdr.h``, ``esp_sdr_rx.h``,
-       ``esp_sdr_tx.h``, ``esp_sdr_ring.h``, ``esp_sdr_paced.h``,
-       ``ieee154_phy.h``, ``ieee154_esp_sdr.h``
-   * - ``apps/``
-     - - ``capture``: capture survey on the console
-       - ``stream``: VITA 49.2 RX and TX over USB (CDC-NCM)
-       - ``osmosdr``: HackRF-style USB SDR for GNU Radio and gqrx
-       - ``osmosdr_serial``: the same over USB-Serial-JTAG (C6, C5)
-       - ``link``: QAM or OFDM packet link
-       - ``wpan``: 802.15.4 test shell
-       - ``rfprobe``: bench probe (tuning, tones, registers)
-       - ``multiapp``: one firmware that runs the others
-         (`doc/multiapp.md <doc/multiapp.md>`__)
-       - ``common``: USB with DFU, watchdogs, crash records
-   * - ``tests/``
-     - ``unit`` (host), ``integration`` (one board), ``regression`` (two
-       boards); see `doc/testing.md <doc/testing.md>`__
-   * - ``doc/``
-     - Guides, register pages, the Doxygen and Sphinx build
-   * - ``scripts/``
-     - ``west dfu`` (``west_commands/``), test runners
-   * - ``boards/``
-     - ``waveshare/esp32c5_zero``: Waveshare ESP32-C5-Zero
-   * - ``zephyr/``
-     - ``module.yml`` and the ``librftest.a`` blobs
-   * - ``west.yml``
-     - The workspace pins (see `Dependencies`_)
-
-
------------
 
 - **Chips:** ESP32-S3 (XIAO ESP32S3), SMP or single core. ESP32-C6
   (XIAO ESP32C6) and ESP32-C5 (C5-Zero): burst captures, and continuous
@@ -108,15 +67,6 @@ Enable it with:
 
 ``esp_sdr_init()`` takes over the radio the Wi-Fi driver brought up; do
 not scan, connect or start an access point while using it.
-
-
-Versioning
-----------
-
-``VERSION`` (Zephyr's format) versions the library and the apps; each
-app prints it at boot. Major for breaking API changes, minor for
-compatible extensions, patch for fixes. A tag ``v<VERSION>`` makes a
-GitHub release.
 
 Dependencies
 ------------
