@@ -1,11 +1,21 @@
-ESP-SDR Jammer
+PBJ3000 - ESP-Jammer
 =================
 
-A software defined radio on the ESP32-S3 Wi-Fi radio for Zephyr: I/Q
+It's a Jammer! And NO, you don't need any additional hardware, a esp32s3 board is enough.
+
+And the longer version is:
+It is a software defined radio jammer based on the ESP32-S3 Wi-Fi radio for Zephyr: I/Q
 capture from the receiver, I/Q playback through the transmit DAC. Ported
 from `ESPARGOS esp-sdr <https://github.com/ESPARGOS/esp-sdr>`__ and
 extended; a west manifest repository and Zephyr module laid out like
 `example-application <https://github.com/zephyrproject-rtos/example-application>`__.
+
+
+How do I get it to work?
+--------
+
+Install PBJ3000.bin on your esp32s3 board, just upload image via terminal or with your tool of choise.
+Now download and install PBJ3000.apk on your android smartphone, connect the ESP32S§ with an usb-c cable to it - start the app, click connect, and you're good to go.
 
 Contents
 --------
@@ -49,27 +59,7 @@ Contents
    * - ``west.yml``
      - The workspace pins (see `Dependencies`_)
 
-Getting started
----------------
 
-::
-
-   west init -m https://github.com/cyber-murmel/esp-sdr-zephyr esp-sdr-ws
-   cd esp-sdr-ws
-   west update
-   west blobs fetch hal_espressif
-   west blobs fetch esp-sdr-zephyr
-   west build -d build --sysbuild -b xiao_esp32s3/esp32s3/procpu esp-sdr-zephyr/apps/multiapp
-   west flash -d build
-   west dfu --storage -d build
-
-This puts multiapp on a XIAO ESP32S3. On its USB shell ``app list``
-shows the apps and ``app run <name>`` starts one, for example
-``app run osmosdr`` (`apps/multiapp/README.rst <apps/multiapp/README.rst>`__).
-Each app also builds on its own. Releases carry the multiapp image and
-the SoapySDR module for gqrx and GNU Radio.
-
-The library
 -----------
 
 - **Chips:** ESP32-S3 (XIAO ESP32S3), SMP or single core. ESP32-C6
@@ -101,21 +91,6 @@ Enable it with:
 ``esp_sdr_init()`` takes over the radio the Wi-Fi driver brought up; do
 not scan, connect or start an access point while using it.
 
-Documentation
--------------
-
-Published at https://cyber-murmel.github.io/esp-sdr-zephyr. To build it
-yourself:
-
-::
-
-   cd esp-sdr-zephyr/doc
-   doxygen
-   make html
-
-The site is in ``doc/_build_sphinx/html``, with the API reference in its
-``doxygen/`` folder. CI builds it with warnings as errors
-(``SPHINXOPTS=-W``) and publishes it.
 
 Versioning
 ----------
