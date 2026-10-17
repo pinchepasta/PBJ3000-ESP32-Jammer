@@ -17,7 +17,8 @@ extended; a west manifest repository and Zephyr module laid out like
 How do I get it to work?
 --------
 
-Install PBJ3000.bin on your esp32s3 board, just upload image via terminal or with your tool of choise.
+Go to <a href="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/releases">Releases</a> and download PBJ3000.bin and PBJ3000.apk.
+Install PBJ3000.bin on your esp32s3 board, just upload image via terminal or with your tool of choice.
 Now download and install PBJ3000.apk on your android smartphone, connect the ESP32S§ with an usb-c cable to it - start the app, click connect, and you're good to go.
 
 <br>
