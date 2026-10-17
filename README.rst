@@ -1,7 +1,7 @@
 PBJ3000 - ESP-Jammer
 =================
 
-It's a Jammer! And NO, you don't need any additional hardware, a esp32s3 board is enough.
+It's a Jammer! And NO, you don't need any additional hardware, an esp32s3 board is enough.
 
 And the longer version is:
 It is a software defined radio jammer based on the ESP32-S3 Wi-Fi radio for Zephyr: I/Q
