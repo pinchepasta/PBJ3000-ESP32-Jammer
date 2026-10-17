@@ -16,6 +16,10 @@ How do I get it to work?
 
 Install PBJ3000.bin on your esp32s3 board, just upload image via terminal or with your tool of choise.
 Now download and install PBJ3000.apk on your android smartphone, connect the ESP32S§ with an usb-c cable to it - start the app, click connect, and you're good to go.
+________
+
+
+<br>
 
 Contents
 --------
