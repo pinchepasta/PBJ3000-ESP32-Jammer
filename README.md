@@ -20,6 +20,18 @@ Install PBJ3000.bin on your esp32s3 board, just upload image via terminal or wit
 Now download and install PBJ3000.apk on your android smartphone, connect the ESP32S§ with an usb-c cable to it - start the app, click connect, and you're good to go.
 ________
 
+What does it look like?
+--------
+
+<img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj1.jpg" alt="Logo" width="20%" height="20%"> <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj2.jpg" alt="Logo" width="20%" height="20%"> <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj3.jpg" alt="Logo" width="20%" height="20%"> <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj4.jpg" alt="Logo" width="20%" height="20%">
+
+
+
+Show it in action!
+--------
+
+<img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/jm.jpg" alt="Logo" width="20%" height="20%"> 
+
 
 <br>
 
