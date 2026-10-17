@@ -1,7 +1,7 @@
 PBJ3000 - ESP-Jammer
 =================
 
-<img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbjlogo.png" alt="Logo" width="50%" height="50%">
+<img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbjlogo.png" alt="Logo" width="20%" height="20%">
 
 It's a Jammer! And NO, you don't need any additional hardware, an esp32s3 board is enough.
 
