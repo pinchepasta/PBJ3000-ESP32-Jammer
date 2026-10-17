@@ -31,6 +31,7 @@ Show it in action!
 --------
 
 <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/jm.jpg" alt="Logo" width="20%" height="20%"> 
+<img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj6.jpg" alt="Logo" width="20%" height="20%"><img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj5.jpg" alt="Logo" width="20%" height="20%"> 
 
 
 <br>
