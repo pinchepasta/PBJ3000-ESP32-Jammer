@@ -37,6 +37,8 @@ Show it in action!
 
 <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj6.jpg" alt="Logo" width="40%" height="40%"><img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj5.jpg" alt="Logo" width="40%" height="40%"> 
 
+I have added 4 magents to mine, to make them hotswappable with my mostly-a-Flipper headless modules based on the exact same board but with an added cc1101.
+You might wanna do a similar thing, or find another creative way to attach them.
 
 <br>
 
