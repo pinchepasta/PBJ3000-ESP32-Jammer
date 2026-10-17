@@ -92,6 +92,15 @@ Dependencies
 - `esp-dsp <https://github.com/espressif/esp-dsp>`__: the FFT for
   ``apps/link`` OFDM
 
+
+
+Important info:
+-------
+
+A radio frequency jamming device like this one here is pretty much illegal in most places, so please make sure you know your local laws before youb push that fancy transmission button!
+Also: The device creates quite drastic harmonics, please be aware of this and use a bandpass filter or use the device in a shielded lab environment only.
+
+
 License
 -------
 
