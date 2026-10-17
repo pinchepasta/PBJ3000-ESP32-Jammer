@@ -12,6 +12,7 @@ from `ESPARGOS esp-sdr <https://github.com/ESPARGOS/esp-sdr>`__ and
 extended; a west manifest repository and Zephyr module laid out like
 `example-application <https://github.com/zephyrproject-rtos/example-application>`__.
 
+<br>
 
 How do I get it to work?
 --------
@@ -26,7 +27,7 @@ What does it look like?
 
 <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj1.jpg" alt="Logo" width="20%" height="20%"> <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj2.jpg" alt="Logo" width="20%" height="20%"> <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj3.jpg" alt="Logo" width="20%" height="20%"> <img src="https://github.com/pinchepasta/PBJ3000-ESP32-Jammer/blob/main/pbj4.jpg" alt="Logo" width="20%" height="20%">
 
-
+<br>
 
 Show it in action!
 --------
